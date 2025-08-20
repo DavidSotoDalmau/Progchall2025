@@ -263,9 +263,9 @@ this.npc = this.add.sprite(590, 310, 'npc').setInteractive({ useHandCursor: true
             .setInteractive({ useHandCursor: true })
             .setRectangleDropZone(80, 150);
 
-       this.zoneDebug = this.add.graphics();
-        this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
-        this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
+      // this.zoneDebug = this.add.graphics();
+      //  this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
+      //  this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
 
         this.pressureZone.on('pointerdown', () => {
             this.scene.start('SalaTercera');
