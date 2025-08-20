@@ -1,0 +1,12 @@
+{
+  "LoreScene": {
+    "intro": {
+      "text": "Has sido contratado por ERNI...",
+      "options": [
+        "¿Dónde está mi mesa?",
+        "¿Quién es mi mentor?",
+        "Nada, gracias."
+      ]
+    }
+  }
+}
