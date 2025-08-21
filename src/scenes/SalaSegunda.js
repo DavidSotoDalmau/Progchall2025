@@ -7,6 +7,7 @@ export default class SalaSegunda extends Phaser.Scene {
         this.load.image('background2', 'assets/fondo2.png');
 		this.load.image('backgroundopen','assets/fondoopen.png');
 		this.load.image('npc', 'assets/npc.png');
+	    this.load.image('npcuno', 'assets/npcuno.png')										 
     }
 
     create() {
@@ -39,13 +40,26 @@ const mensaje = 'Has entrado en la recepción de las oficinas del triangle.';
             padding: { x: 10, y: 5 },
             wordWrap: { width: 760 }
         }).setDepth(1).setScrollFactor(0);
+	this.dialogueBoxnpc = this.add.text(40, 140, '', {
+            font: '18px monospace',
+            fill: '#ffff00',
+            backgroundColor: '#000000',
+            padding: { x: 10, y: 5 },
+            wordWrap: { width: 760 }
+        }).setDepth(1).setScrollFactor(0);								  
+								   
+							
+									   
+									 
+									
+										  
 const text = this.add.text(80, 80, mensaje, {
     font: '20px monospace',
     fill: '#ffffff',
     wordWrap: { width: 640 }, // Opcional: envoltorio de línea
     padding: { x: 10, y: 10 }
 });
-this.npc = this.add.sprite(900,275, 'npc').setInteractive({ useHandCursor: true });
+this.npc = this.add.sprite(900,275, 'npcuno').setInteractive({ useHandCursor: true });
 
 this.npc.on('pointerdown', () => {
     this.startDialogueWithNPC();
@@ -159,6 +173,7 @@ if (!this.gs.getFlag('hasExaminedMisteriousObject') && this.gs.getFlag('tarjetac
 
 this.dialogueGroup.clear(true, true);
 	const respuesta = respuestas[option];
+								 
     const background = this.add.graphics();
     background.fillStyle(0x000000, 0.8);
     background.fillRect(700, 180, 560, 40);
@@ -192,7 +207,12 @@ this.dialogueGroup.clear(true, true);
 
 	 showDialogue(text) {
 	   this.dialogueBox.setText(text);
+									
     }
+						 
+									  
+								 
+	 
 	showContextMenu(itemName) {
         
 
