@@ -25,7 +25,7 @@ const scaleY = usableHeight / bg.height;
 const scale = Math.max(scaleX, scaleY);
 
 bg.setScale(scale);
-bg.y-=40
+bg.y-=240
 const g = this.add.graphics();
 g.fillStyle(0x000000, 1);
 g.fillRect(0, 0, this.scale.width, 80);
@@ -45,7 +45,7 @@ const text = this.add.text(80, 80, mensaje, {
     wordWrap: { width: 640 }, // Opcional: envoltorio de línea
     padding: { x: 10, y: 10 }
 });
-this.npc = this.add.sprite(590, 270, 'npc').setInteractive({ useHandCursor: true });
+this.npc = this.add.sprite(900,275, 'npc').setInteractive({ useHandCursor: true });
 
 this.npc.on('pointerdown', () => {
     this.startDialogueWithNPC();
@@ -71,7 +71,7 @@ this.time.delayedCall(2000, () => {
     group.clear(true, true); // Elimina ambos
 });
 
-        const backButton = this.add.text(600, 565, '[Salir]', {
+        const backButton = this.add.text(1050, 680, '[Salir del edificio]', {
             font: '16px monospace',
             fill: '#00ffff',
             backgroundColor: '#000'
@@ -93,10 +93,10 @@ startDialogueWithNPC() {
 
     const background = this.add.graphics();
     background.fillStyle(0x000000, 0.8);
-    background.fillRect(100, 420, 600, 150);
+    background.fillRect(740, 180, 300, 20);
     this.dialogueGroup.add(background);
 
-    const npcResponse = this.add.text(120, 440, "¿Qué quieres saber, forastero?", {
+    const npcResponse = this.add.text(740, 180, "¿Qué quieres saber, forastero?", {
         font: '18px monospace',
         fill: '#ffffff',
         wordWrap: { width: 560 }
@@ -113,7 +113,7 @@ startDialogueWithNPC() {
 	options.push("Nada, gracias.");
       options.forEach((option, index) => {
         const used = this.dialogueUsedOptions[option];
-        const optionText = this.add.text(120, 480 + index * 25, option, {
+        const optionText = this.add.text(700, 520 + index * 25, option, {
             font: '16px monospace',
             fill: used ? '#888888' : '#00ff00',
             backgroundColor: '#222222',
@@ -161,13 +161,13 @@ this.dialogueGroup.clear(true, true);
 	const respuesta = respuestas[option];
     const background = this.add.graphics();
     background.fillStyle(0x000000, 0.8);
-    background.fillRect(100, 420, 600, 150);
+    background.fillRect(700, 180, 560, 40);
 	  background.on('pointerdown', (pointer, x, y, event) => {
     event && event.stopPropagation();
   });
     this.dialogueGroup.add(background);
-
-    const reply = this.add.text(120, 440, respuesta, {
+	 
+    const reply = this.add.text(700, 180, respuesta, {
         font: '18px monospace',
         fill: '#ffffff',
         wordWrap: { width: 560 }
@@ -175,7 +175,7 @@ this.dialogueGroup.clear(true, true);
     this.dialogueGroup.add(reply);
 
     // Botón < Volver para reabrir menú de diálogo
-    const backButton = this.add.text(600, 510, '< Volver', {
+    const backButton = this.add.text(700, 610, '< Volver', {
         font: '16px monospace',
         fill: '#00ffff',
         backgroundColor: '#111111',
@@ -252,20 +252,22 @@ const scaleY = usableHeight / bg2.height;
 const scale = Math.max(scaleX, scaleY);
 
 bg2.setScale(scale);
-bg2.y-=40
+bg2.y-=240
+
+
 const g = this.add.graphics();
 g.fillStyle(0x000000, 1);
 g.fillRect(0, 0, this.scale.width, 80);
 g.fillRect(0, this.scale.height - 80, this.scale.width, 80);
-this.npc = this.add.sprite(590, 310, 'npc').setInteractive({ useHandCursor: true });
+this.npc = this.add.sprite(900,275, 'npc').setInteractive({ useHandCursor: true });
  this.pressureZone = this.add.zone(130, 480, 120, 90)
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
             .setRectangleDropZone(80, 150);
 
-      // this.zoneDebug = this.add.graphics();
-      //  this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
-      //  this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
+      this.zoneDebug = this.add.graphics();
+      this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
+      this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
 
         this.pressureZone.on('pointerdown', () => {
             this.scene.start('SalaTercera');
@@ -291,7 +293,7 @@ this.npc = this.add.sprite(590, 310, 'npc').setInteractive({ useHandCursor: true
         this.inventoryGroup = this.add.group();
         const startY = 20;
 
-        this.add.text(600, startY - 25, 'Inventario:', {
+        this.add.text(950, startY - 25, 'Inventario:', {
             font: '16px monospace',
             fill: '#ffffff',
             backgroundColor: '#000000',
@@ -299,7 +301,7 @@ this.npc = this.add.sprite(590, 310, 'npc').setInteractive({ useHandCursor: true
         }).setScrollFactor(0).setDepth(1);
 
         gameState.inventory.forEach((item, index) => {
-            const itemText = this.add.text(600, startY + index * 30, item, {
+            const itemText = this.add.text(970, startY + index * 30, item, {
                 font: '16px monospace',
                 fill: '#ffff00',
                 backgroundColor: '#111111',

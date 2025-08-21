@@ -1,6 +1,6 @@
-export default class LoreScene extends Phaser.Scene {
+export default class SalaTercera extends Phaser.Scene {
     constructor() {
-        super('LoreScene');
+        super('SalaTercera');
     }
 
     create() {
@@ -9,27 +9,26 @@ export default class LoreScene extends Phaser.Scene {
         this.cameras.main.setBackgroundColor('#000000');
 
         // Texto de introducción
-        const loreText = "Has sido contratado por ERNI, hoy es tu primer día.\n\nHas llegado a la oficina de plaza cataluña con la carpeta que te dieron el día de la firma del contrato bajo el brazo.\n\nTu Aventura comienza aquí...";
+        const loreText = "Has completado la preview de 'MY FIRST DAY @ ERNI' FELICIDADES!!!";
 
-        const text = this.add.text(this.scale.width/2, this.scale.height/2, loreText, {
+        const text = this.add.text(100, 100, loreText, {
             font: '24px monospace',
             fill: '#ffffff',
             wordWrap: { width: 600 },
             align: 'left'
         });
-		text.setOrigin(0.5);
 		this.registry.set('gameState', gameState);
 
         // Botón para empezar
-        const startButton = this.add.text(this.scale.width/2, this.scale.height/2+200, '[ Empezar ]', {
+        const startButton = this.add.text(300, 400, '[ Volver a Empezar ]', {
             font: '28px monospace',
             fill: '#00ff00',
             backgroundColor: '#111111',
             padding: { x: 10, y: 10 }
         }).setInteractive({ useHandCursor: true });
-startButton.setOrigin(0.5);
+
         startButton.on('pointerdown', () => {
-            this.scene.start('MainScene');
+            this.scene.start('LoreScene');
         });
     }
 }

@@ -27,6 +27,7 @@ const scaleY = usableHeight / bg.height;
 const scale = Math.max(scaleX, scaleY);
 
 bg.setScale(scale);
+bg.y -=140;
 const g = this.add.graphics();
 g.fillStyle(0x000000, 1);
 g.fillRect(0, 0, this.scale.width, 40);
@@ -34,7 +35,7 @@ g.fillRect(0, this.scale.height - 60, this.scale.width, 60);
 		this.inventoryGroup = this.add.group();
 		this.gs.addItem("Carpeta");
 		this.updateInventoryDisplay();
-        this.player = this.add.sprite(50, 420, 'player').setInteractive({ useHandCursor: true });
+        this.player = this.add.sprite(50, 500, 'player').setInteractive({ useHandCursor: true });
 		
         if (this.gs.getFlag('entered') && !this.gs.getFlag('tarjetarecogida')) {
             
@@ -73,27 +74,27 @@ const group = this.add.group([bgt, text]);
 this.time.delayedCall(1000, () => {
     group.clear(true, true); // Elimina ambos
 });
-this.item = this.add.sprite(150, 510, 'item').setInteractive({ useHandCursor: true });
+this.item = this.add.sprite(250, 510, 'item').setInteractive({ useHandCursor: true });
         }
 
-        this.dialogueBox = this.add.text(20, 240, '', {
+        this.dialogueBox = this.add.text(20, 340, '', {
             font: '18px monospace',
-            fill: '#ffffff',
+            fill: '#0000ff',
             backgroundColor: '#000000',
-            padding: { x: 10, y: 5 },
+            padding: { x: 0, y: 5 },
             wordWrap: { width: 760 }
         }).setDepth(1).setScrollFactor(0);
 
         this.input.on('gameobjectdown', this.onObjectClicked, this);
 
-        this.pressureZone = this.add.zone(640, 392, 90, 335)
+        this.pressureZone = this.add.zone(890, 420, 320, 480)
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
             .setRectangleDropZone(80, 150);
 
        //this.zoneDebug = this.add.graphics();
-        //this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
-       // this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
+       //this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
+       //this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
 
         this.pressureZone.on('pointerdown', () => {
             this.scene.start('SalaSegunda');
@@ -130,8 +131,8 @@ this.item = this.add.sprite(150, 510, 'item').setInteractive({ useHandCursor: tr
 
         this.contextMenuGroup = this.add.group();
 
-        const menuX = 700;
-        const menuY = 500;
+        const menuX = 1080;
+        const menuY = 550;
         const options = ['Examinar', 'Usar'];
 
         options.forEach((option, index) => {
@@ -159,7 +160,7 @@ this.item = this.add.sprite(150, 510, 'item').setInteractive({ useHandCursor: tr
         this.inventoryGroup = this.add.group();
         const startY = 20;
 
-        this.add.text(600, startY - 25, 'Inventario:', {
+        this.add.text(950, startY - 25, 'Inventario:', {
             font: '16px monospace',
             fill: '#ffffff',
             backgroundColor: '#000000',
@@ -167,7 +168,7 @@ this.item = this.add.sprite(150, 510, 'item').setInteractive({ useHandCursor: tr
         }).setScrollFactor(0).setDepth(1);
 
         this.gs.inventory.forEach((item, index) => {
-            const itemText = this.add.text(600, startY + index * 30, item, {
+            const itemText = this.add.text(970, startY + index * 30, item, {
                 font: '16px monospace',
                 fill: '#ffff00',
                 backgroundColor: '#111111',

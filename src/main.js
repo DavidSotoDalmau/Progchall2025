@@ -9,8 +9,8 @@ window.gameState = gameState;
 
 const config = {
   type: Phaser.AUTO,
-  width: 800,
-  height: 600,
+  width: 1280,
+  height: 720,
   parent: "game-container",
   scene: [LoreScene, SalaSegunda, MainScene, SalaTercera],
   physics: { default: "arcade", arcade: { debug: false } }
