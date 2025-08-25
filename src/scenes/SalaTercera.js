@@ -16,7 +16,22 @@ this.accessCardAttempts = 0;
         this.gs.setFlag('entered', true);
         this.dialogueUsedOptions = {};
         const usableHeight = this.scale.height - 80; // 20px arriba y 20px abajo
+this.pressureZonetimbre = this.add.zone(965, 320, 10, 10)
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true })
+            .setRectangleDropZone(80, 150);
 
+      this.zoneDebug = this.add.graphics();
+	  this.zoneDebug.setDepth(5);
+      this.zoneDebug.lineStyle(2, 0x0000ff00, 0.5);
+      this.zoneDebug.strokeRectShape(this.pressureZonetimbre.getBounds());
+
+        this.pressureZonetimbre.on('pointerdown', () => {
+            this.showDialogue('Parece que el timbre no funciona. Prueba con la tarjeta.');
+        });
+		
+		
+		
 const bg = this.add.image(0, 40, 'backgroundg3').setOrigin(0, 0);
 
 // Escala la imagen proporcionalmente al nuevo alto (sin deformarla)
@@ -54,72 +69,35 @@ g.fillRect(0, this.scale.height - 80, this.scale.width, 80);
     }
 
 
-
-
-showDialogueResponse(option) {
-    // Limpia opciones anteriores
-    this.dialogueGroup.clear(true, true);
-
-    // Si la opción es “Nada, gracias.”, cerramos sin mostrar respuesta
-    if (option === "Nada, gracias.") {
-		
-		this.dialogueGroup.setVisible(false);
-		
-        return;
-    }
-	this.dialogueGroup.setVisible(true);
-	if (option === "¡Hola! Vengo a ERNI, ¡es mi primer día!") {
-        this.gs.setFlag('tarjetaclue', true);
-    }
-    // Si no, mostramos la respuesta correspondiente
-    const respuestas = {
-    "¡Hola! Vengo a ERNI, ¡es mi primer día!": "¡Hola! ¡bienvenido!, te deberían haber dado una tarjeta de acceso.",
-    "¿A qué piso hay que ir?": "Tienes que subir a la tercera, las oficinas están a la derecha al salir del ascensor."
-};
-
-// Añadir opción condicional si falta la tarjeta
-if (!this.gs.getFlag('hasExaminedMisteriousObject') && this.gs.getFlag('tarjetaclue')) {
-    respuestas["No encuentro la tarjeta"] = "Deberías tenerla en la carpeta, si no la encuentras, mira que no se te haya caído.";
-}
-
-this.dialogueGroup.clear(true, true);
-	const respuesta = respuestas[option];
-    const background = this.add.graphics();
-    background.fillStyle(0x000000, 0.8);
-    background.fillRect(700, 180, 560, 40);
-	  background.on('pointerdown', (pointer, x, y, event) => {
-    event && event.stopPropagation();
-  });
-    this.dialogueGroup.add(background);
-	 
-    const reply = this.add.text(700, 180, respuesta, {
-        font: '18px monospace',
-        fill: '#ffffff',
-        wordWrap: { width: 560 }
-    });
-    this.dialogueGroup.add(reply);
-
-    // Botón < Volver para reabrir menú de diálogo
-    const backButton = this.add.text(700, 610, '< Volver', {
-        font: '16px monospace',
-        fill: '#00ffff',
-        backgroundColor: '#111111',
-        padding: { x: 8, y: 4 }
-    }).setInteractive({ useHandCursor: true });
-
-    backButton.on('pointerdown', () => {
-		this.dialogueGroup.clear(true, true);
-        this.startDialogueWithNPC();
-    });
-
-    this.dialogueGroup.add(backButton);
-}
-
 	 showDialogue(text) {
 	   this.dialogueBox.setText(text);
     }
 	showContextMenu(itemName) {
-        
+        if (itemName=='teléfono móvil')
+		{
+			 this.contextMenuGroup = this.add.group();
+
+        const menuX = 700;
+        const menuY = 500;
+        const options = ['Llamar', 'Jugar'];
+
+        options.forEach((option, index) => {
+            const optionText = this.add.text(menuX, menuY + index * 30, option, {
+                font: '16px monospace',
+                fill: '#ffffff',
+                backgroundColor: '#333333',
+                padding: { x: 10, y: 5 }
+            }).setInteractive({ useHandCursor: true });
+
+            optionText.on('pointerdown', () => {
+                this.handleInventoryAction(option, this.selectedInventoryItem);
+                this.contextMenuGroup.clear(true, true);event && event.stopPropagation();
+            });
+
+            this.contextMenuGroup.add(optionText);
+        });
+
+		} else {
 
         this.contextMenuGroup = this.add.group();
 
@@ -144,6 +122,7 @@ this.dialogueGroup.clear(true, true);
         });
 
     }
+	}
 	    handleInventoryAction(action, itemName) {
         switch (action) {
             case 'Examinar':
@@ -161,15 +140,24 @@ this.dialogueGroup.clear(true, true);
                     this.showDialogue(`No ves nada especial en ${itemName}.`);
                 }
                 break;
+			case 'Llamar':
+                if (itemName === 'teléfono móvil') {
+					this.showDialer();
+				                
+                }else {
+                    this.showDialogue(`No puedes llamar con ${itemName}.`);
+                }
+                break;
+			case 'Jugar':
+                this.showDialogue(`Juegas un rato con ${itemName}.`);
+                
+                break;
             case 'Usar':
                 if (itemName === 'objeto misterioso') {
                     this.showDialogue('No sabes qué es el objeto, deberías examinarlo primero.');
                 } else if (itemName === 'llave oxidada') {
                     this.showDialogue('Intentas usar la llave, pero aquí no hay cerraduras.');
-				} else if (itemName === 'teléfono móvil') {
-				this.showDialer();
-				
-                } else if (itemName === 'tarjetas de acceso') {
+				} else if (itemName === 'tarjetas de acceso') {
 					
 					if (!this.gs.getFlag('tarjetaactiva'))
 					{
@@ -189,14 +177,7 @@ this.dialogueBox.setDepth(2);
 
   bgBase.y -= 140;
   bgAlert.y -= 140;
-if (this.accessCardAttempts === 2) {
-  if (!this.gs.hasItem("teléfono móvil")) {
-    this.gs.addItem("teléfono móvil");
-    this.updateInventoryDisplay();
-	this.gs.setFlag("movilactivo",true);
-    this.showDialogue("¡Parece que vas a tener que llamar!");
-  }
-}
+
   // Elementos UI (barra superior/inferior)
   const g = this.add.graphics();
   g.fillStyle(0x000000, 1);
@@ -211,10 +192,15 @@ if (this.accessCardAttempts === 2) {
     callback: () => {
       const visible = bgAlert.visible;
       bgAlert.setVisible(!visible);   // alterna visibilidad
-	  this.showDialogue('Usas las tarjetas pero el lector parpadea en rojo.');
-      bgBase.setVisible(visible);     // complementario
-	  this.showDialogue('Usas las tarjetas pero el lector parpadea en rojo.');
-      flashCount++;
+	  bgBase.setVisible(visible);     // complementario
+	 flashCount++;
+	  if (this.accessCardAttempts === 2) {
+  if (!this.gs.hasItem("teléfono móvil")) {
+    this.gs.addItem("teléfono móvil");
+    this.updateInventoryDisplay();
+	this.showDialogue("¡No funciona!¡Parece que vas a tener que llamar para que te arreglen el acceso!");
+  }
+}
 	  this.updateInventoryDisplay();
     }
   });
@@ -232,14 +218,14 @@ if (this.accessCardAttempts === 2) {
 
 
   bgBase.y -= 140;
-			this.pressureZone = this.add.zone(220, 550, 180, 170)
+			this.pressureZone = this.add.zone(320, 350, 180, 500)
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
             .setRectangleDropZone(80, 150);
 
-      this.zoneDebug = this.add.graphics();
-      this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
-      this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
+      //this.zoneDebug = this.add.graphics();
+      //this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
+      //this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
 
         this.pressureZone.on('pointerdown', () => {
             this.scene.start('SalaCuarta');
@@ -249,12 +235,14 @@ if (this.accessCardAttempts === 2) {
 
 				}  else if (itemName === 'Carpeta') {
                     this.showDialogue('Abres la Carpeta, hay varios documentos corporativos, encuentras el número de telefono para emergencias: 936677776.');
+					this.gs.setFlag("movilactivo",true);
                 } else {
                     this.showDialogue(`No puedes usar ${itemName} aquí.`);
                 }
                 break;
         }
     }
+	
 	onInventoryItemClick(itemName) {
         this.selectedInventoryItem = itemName;
         this.showContextMenu(itemName);
@@ -291,6 +279,8 @@ if (this.accessCardAttempts === 2) {
     }
 	showDialer() {
   // Limpia si ya estaba abierto
+  if (this.gs.getFlag("movilactivo"))
+  {
   if (this.dialerGroup) {
     this.dialerGroup.clear(true, true);
   }
@@ -372,5 +362,9 @@ callBtn.on('pointerdown', () => {
 });
 
 this.dialerGroup.add(callBtn);
+}
+	 else {
+		this.showDialogue(`No sabes a donde llamar, quizá el número esté por ahí...`);
+	}
 }
 }
