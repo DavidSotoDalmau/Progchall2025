@@ -29,7 +29,7 @@ export default class LoreScene extends Phaser.Scene {
         }).setInteractive({ useHandCursor: true });
 startButton.setOrigin(0.5);
         startButton.on('pointerdown', () => {
-            this.scene.start('MainScene');
+            this.scene.start('Cap1Lore');
         });
     }
 }
