@@ -4,7 +4,9 @@ export class GameState {
         this.flags = {
             hasExaminedMisteriousObject: false,
             entered: false,
-			tarjetarecogida: false
+			tarjetarecogida: false,
+			movilactivo:false,
+			tarjetaactiva:false
         };
     }
 

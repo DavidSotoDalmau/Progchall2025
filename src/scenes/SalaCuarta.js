@@ -1,6 +1,6 @@
-export default class SalaTercera extends Phaser.Scene {
+export default class SalaCuarta extends Phaser.Scene {
     constructor() {
-        super('SalaTercera');
+        super('SalaCuarta');
     }
 
     create() {

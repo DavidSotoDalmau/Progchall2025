@@ -280,14 +280,14 @@ g.fillStyle(0x000000, 1);
 g.fillRect(0, 0, this.scale.width, 80);
 g.fillRect(0, this.scale.height - 80, this.scale.width, 80);
 this.npc = this.add.sprite(900,275, 'npc').setInteractive({ useHandCursor: true });
- this.pressureZone = this.add.zone(130, 480, 120, 90)
+ this.pressureZone = this.add.zone(220, 550, 180, 170)
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
             .setRectangleDropZone(80, 150);
 
-      this.zoneDebug = this.add.graphics();
-      this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
-      this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
+      //this.zoneDebug = this.add.graphics();
+      //this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
+      //this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
 
         this.pressureZone.on('pointerdown', () => {
             this.scene.start('SalaTercera');

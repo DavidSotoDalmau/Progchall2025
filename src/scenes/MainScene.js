@@ -74,7 +74,7 @@ const group = this.add.group([bgt, text]);
 this.time.delayedCall(1000, () => {
     group.clear(true, true); // Elimina ambos
 });
-this.item = this.add.sprite(250, 510, 'item').setInteractive({ useHandCursor: true });
+this.item = this.add.sprite(170, 620, 'item').setInteractive({ useHandCursor: true });
         }
 
         this.dialogueBox = this.add.text(20, 340, '', {

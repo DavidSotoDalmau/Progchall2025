@@ -5,17 +5,19 @@ export default class SalaTercera extends Phaser.Scene {
 
     preload() {
         this.load.image('background3', 'assets/fondoe3.png');
+		this.load.image('backgroundr3', 'assets/fondor3.png');
+		this.load.image('backgroundg3', 'assets/fondog3.png');
     }
 
     create() {
 		console.log(this.scene.manager.keys);
 		this.gs = this.registry.get('gameState') || gameState;
-
+this.accessCardAttempts = 0;
         this.gs.setFlag('entered', true);
         this.dialogueUsedOptions = {};
         const usableHeight = this.scale.height - 80; // 20px arriba y 20px abajo
 
-const bg = this.add.image(0, 40, 'background3').setOrigin(0, 0);
+const bg = this.add.image(0, 40, 'backgroundg3').setOrigin(0, 0);
 
 // Escala la imagen proporcionalmente al nuevo alto (sin deformarla)
 const scaleX = this.scale.width / bg.width;
@@ -29,7 +31,13 @@ g.fillStyle(0x000000, 1);
 g.fillRect(0, 0, this.scale.width, 80);
 g.fillRect(0, this.scale.height - 80, this.scale.width, 80);
          
- 
+ this.dialogueBox = this.add.text(20, 140, '', {
+            font: '18px monospace',
+            fill: '#ffffff',
+            backgroundColor: '#000000',
+            padding: { x: 10, y: 5 },
+            wordWrap: { width: 760 }
+        }).setDepth(1).setScrollFactor(0);
 
 
         const backButton = this.add.text(1050, 680, '[Volver a recepcion]', {
@@ -38,10 +46,11 @@ g.fillRect(0, this.scale.height - 80, this.scale.width, 80);
             backgroundColor: '#000'
         }).setInteractive({ useHandCursor: true });
 		this.inventoryGroup = this.add.group();
-        this.updateInventoryDisplay();
+	    this.updateInventoryDisplay();
         backButton.on('pointerdown', () => {
             this.scene.start('SalaSegunda');
         });
+		
     }
 
 
@@ -157,38 +166,89 @@ this.dialogueGroup.clear(true, true);
                     this.showDialogue('No sabes qué es el objeto, deberías examinarlo primero.');
                 } else if (itemName === 'llave oxidada') {
                     this.showDialogue('Intentas usar la llave, pero aquí no hay cerraduras.');
+				} else if (itemName === 'teléfono móvil') {
+				this.showDialer();
+				
                 } else if (itemName === 'tarjetas de acceso') {
-                    this.showDialogue('Usas las tarjetas y el torno se abre como por arte de mágia.');
-					 const usableHeight = this.scale.height - 80; 
-					const bg2 = this.add.image(0, 40, 'backgroundopen').setOrigin(0, 0);
+					
+					if (!this.gs.getFlag('tarjetaactiva'))
+					{
+                    this.showDialogue('Usas las tarjetas pero el lector parpadea en rojo.');
+					
+					this.accessCardAttempts = (this.accessCardAttempts || 0) + 1;
+					 const usableHeight = this.scale.height - 80;
+  const bgBase = this.add.image(0, 40, 'backgroundg3').setOrigin(0, 0);
+  const bgAlert = this.add.image(0, 40, 'backgroundr3').setOrigin(0, 0);
+this.dialogueBox.setDepth(2);
+  const scaleX = this.scale.width / bgBase.width;
+  const scaleY = usableHeight / bgBase.height;
+  const scale = Math.max(scaleX, scaleY);
 
-// Escala la imagen proporcionalmente al nuevo alto (sin deformarla)
-const scaleX = this.scale.width / bg2.width;
-const scaleY = usableHeight / bg2.height;
-const scale = Math.max(scaleX, scaleY);
+  bgBase.setScale(scale).setDepth(0).setVisible(true);
+  bgAlert.setScale(scale).setDepth(1).setVisible(false); // inicia oculto
 
-bg2.setScale(scale);
-bg2.y-=40
-const g = this.add.graphics();
-g.fillStyle(0x000000, 1);
-g.fillRect(0, 0, this.scale.width, 80);
-g.fillRect(0, this.scale.height - 80, this.scale.width, 80);
-this.npc = this.add.sprite(590, 310, 'npc').setInteractive({ useHandCursor: true });
- this.pressureZone = this.add.zone(130, 480, 120, 90)
+  bgBase.y -= 140;
+  bgAlert.y -= 140;
+if (this.accessCardAttempts === 2) {
+  if (!this.gs.hasItem("teléfono móvil")) {
+    this.gs.addItem("teléfono móvil");
+    this.updateInventoryDisplay();
+	this.gs.setFlag("movilactivo",true);
+    this.showDialogue("¡Parece que vas a tener que llamar!");
+  }
+}
+  // Elementos UI (barra superior/inferior)
+  const g = this.add.graphics();
+  g.fillStyle(0x000000, 1);
+  g.fillRect(0, 0, this.scale.width, 80);
+  g.fillRect(0, this.scale.height - 80, this.scale.width, 80);
+  g.setDepth(2);
+  // Parpadeo 3 veces (6 eventos: on/off)
+  let flashCount = 0;
+  this.time.addEvent({
+    delay: 300,       // 300 ms entre cada parpadeo
+    repeat: 5,        // 6 eventos = 3 parpadeos
+    callback: () => {
+      const visible = bgAlert.visible;
+      bgAlert.setVisible(!visible);   // alterna visibilidad
+	  this.showDialogue('Usas las tarjetas pero el lector parpadea en rojo.');
+      bgBase.setVisible(visible);     // complementario
+	  this.showDialogue('Usas las tarjetas pero el lector parpadea en rojo.');
+      flashCount++;
+	  this.updateInventoryDisplay();
+    }
+  });
+					} else
+					{
+						this.showDialogue('Usas la tarjeta y el lector parpadea en verde, puedes entrar.');
+						const usableHeight = this.scale.height - 80;
+  const bgBase = this.add.image(0, 40, 'background3').setOrigin(0, 0);
+  this.dialogueBox.setDepth(2);
+  const scaleX = this.scale.width / bgBase.width;
+  const scaleY = usableHeight / bgBase.height;
+  const scale = Math.max(scaleX, scaleY);
+
+  bgBase.setScale(scale).setDepth(0).setVisible(true);
+
+
+  bgBase.y -= 140;
+			this.pressureZone = this.add.zone(220, 550, 180, 170)
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
             .setRectangleDropZone(80, 150);
 
-      // this.zoneDebug = this.add.graphics();
-      //  this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
-      //  this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
+      this.zoneDebug = this.add.graphics();
+      this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
+      this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
 
         this.pressureZone.on('pointerdown', () => {
-            this.scene.start('SalaTercera');
+            this.scene.start('SalaCuarta');
         });
+					}
+        
 
 				}  else if (itemName === 'Carpeta') {
-                    this.showDialogue('Abres la Carpeta, hay varios documentos corporativos, debería haber alguna acreditación pero no ves nada.');
+                    this.showDialogue('Abres la Carpeta, hay varios documentos corporativos, encuentras el número de telefono para emergencias: 936677776.');
                 } else {
                     this.showDialogue(`No puedes usar ${itemName} aquí.`);
                 }
@@ -212,7 +272,7 @@ this.npc = this.add.sprite(590, 310, 'npc').setInteractive({ useHandCursor: true
             fill: '#ffffff',
             backgroundColor: '#000000',
             padding: { x: 8, y: 5 }
-        }).setScrollFactor(0).setDepth(1);
+        }).setScrollFactor(0).setDepth(3);
 
         gameState.inventory.forEach((item, index) => {
             const itemText = this.add.text(970, startY + index * 30, item, {
@@ -220,7 +280,7 @@ this.npc = this.add.sprite(590, 310, 'npc').setInteractive({ useHandCursor: true
                 fill: '#ffff00',
                 backgroundColor: '#111111',
                 padding: { x: 8, y: 5 }
-            }).setInteractive({ useHandCursor: true }).setScrollFactor(0).setDepth(1);
+            }).setInteractive({ useHandCursor: true }).setScrollFactor(0).setDepth(3);
 
             itemText.on('pointerdown', () => {
                 this.onInventoryItemClick(item);
@@ -229,4 +289,88 @@ this.npc = this.add.sprite(590, 310, 'npc').setInteractive({ useHandCursor: true
             this.inventoryGroup.add(itemText);
         });
     }
+	showDialer() {
+  // Limpia si ya estaba abierto
+  if (this.dialerGroup) {
+    this.dialerGroup.clear(true, true);
+  }
+
+  this.dialedNumber = ""; // inicializa número marcado
+  this.dialerGroup = this.add.group();
+
+  // Fondo del teclado
+  const bg = this.add.rectangle(500, 450, 300, 400, 0x000000, 0.9)
+    .setScrollFactor(0).setDepth(1000);
+  this.dialerGroup.add(bg);
+
+  // Texto donde aparece el número marcado
+  const display = this.add.text(380, 270, "", {
+    font: '24px monospace',
+    fill: '#00ff00',
+    backgroundColor: '#111111',
+    padding: { x: 8, y: 4 }
+  }).setScrollFactor(0).setDepth(1001);
+  this.dialerGroup.add(display);
+
+  // Coordenadas base para los botones
+  const startX = 400;
+  const startY = 330;
+  const buttonSize = 60;
+
+  const numbers = ['1','2','3','4','5','6','7','8','9','0'];
+  numbers.forEach((num, index) => {
+    const row = Math.floor(index / 3);
+    const col = index % 3;
+    const x = startX + col * (buttonSize + 10);
+    const y = startY + row * (buttonSize + 10);
+
+    const button = this.add.text(x, y, num, {
+      font: '24px monospace',
+      fill: '#ffffff',
+      backgroundColor: '#333333',
+      padding: { x: 15, y: 10 }
+    }).setInteractive({ useHandCursor: true }).setScrollFactor(0).setDepth(1001);
+
+    button.on('pointerdown', () => {
+      this.dialedNumber += num;
+      display.setText(this.dialedNumber);
+    });
+
+    this.dialerGroup.add(button);
+  });
+
+  // Botón de cerrar
+  const closeBtn = this.add.text(500, 600, '[ Cerrar ]', {
+    font: '18px monospace',
+    fill: '#ff4444',
+    backgroundColor: '#000000',
+    padding: { x: 10, y: 5 }
+  }).setInteractive({ useHandCursor: true }).setScrollFactor(0).setDepth(1001);
+
+  closeBtn.on('pointerdown', () => {
+    this.dialerGroup.clear(true, true);
+  });
+
+  this.dialerGroup.add(closeBtn);
+  const callBtn = this.add.text(400, 600, '[ Llamar ]', {
+  font: '18px monospace',
+  fill: '#00ff00',
+  backgroundColor: '#000000',
+  padding: { x: 10, y: 5 }
+}).setInteractive({ useHandCursor: true }).setScrollFactor(0).setDepth(1001);
+
+callBtn.on('pointerdown', () => {
+	this.dialerGroup.clear(true,true);
+  if (this.dialedNumber === "112") {
+    this.showDialogue("Has llamado a emergencias. 😬");
+  } else if (this.dialedNumber === "936677776") {
+	  this.showDialogue(`Hablas con Anna Pons, le explicas el problema con la tarjeta y te lo arregla. ¡Prueba de nuevo!.`);
+	  this.gs.setFlag('tarjetaactiva',true);
+	  } else {
+    this.showDialogue(`Número ${this.dialedNumber} no disponible.`);
+  }
+});
+
+this.dialerGroup.add(callBtn);
+}
 }
