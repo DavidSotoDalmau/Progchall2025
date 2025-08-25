@@ -85,7 +85,7 @@ this.item = this.add.sprite(170, 620, 'item').setInteractive({ useHandCursor: tr
 
         this.dialogueBox = this.add.text(20, 340, '', {
             font: '18px monospace',
-            fill: '#0000ff',
+            fill: '#ffffff',
             backgroundColor: '#000000',
             padding: { x: 0, y: 5 },
             wordWrap: { width: 760 }
