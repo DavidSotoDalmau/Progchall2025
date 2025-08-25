@@ -145,7 +145,7 @@ this.item = this.add.sprite(170, 620, 'item').setInteractive({ useHandCursor: tr
             const optionText = this.add.text(menuX, menuY + index * 30, option, {
                 font: '16px monospace',
                 fill: '#ffffff',
-                backgroundColor: '#333333',
+                backgroundColor: '#000000',
                 padding: { x: 10, y: 5 }
             }).setInteractive({ useHandCursor: true });
 
