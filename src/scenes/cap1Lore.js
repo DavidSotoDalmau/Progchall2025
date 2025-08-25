@@ -6,8 +6,10 @@ preload() {
   this.load.audio("CapMusic", "assets/transicion.mp3");
 }
      create() {
-		 this.music = this.sound.add("CapMusic", { volume: 0.5 });
-this.music.play();
+		 this.music = this.sound.add("CapMusic", {
+		     volume: 0.5
+		 });
+		 this.music.play();
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
 

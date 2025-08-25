@@ -3,7 +3,7 @@ export default class Cap2Lore extends Phaser.Scene {
         super('Cap2Lore');
     }
 preload() {
-  this.load.audio("CapMusic", "assets/transicion.mp3");
+    this.load.audio("CapMusic", "assets/transicion.mp3");
 }
      create() {
 		 this.sound.stopAll();
