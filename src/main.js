@@ -1,5 +1,6 @@
 import LoreScene from "./scenes/LoreScene.js";
 import Cap1Lore from "./scenes/cap1Lore.js";
+import Cap2Lore from "./scenes/cap2Lore.js";
 import SalaSegunda from "./scenes/SalaSegunda.js";
 import SalaTercera from "./scenes/SalaTercera.js";
 import SalaCuarta from "./scenes/SalaCuarta.js";
@@ -14,7 +15,7 @@ const config = {
   width: 1280,
   height: 720,
   parent: "game-container",
-  scene: [LoreScene, Cap1Lore, SalaSegunda, MainScene, SalaTercera, SalaCuarta],
+  scene: [LoreScene, Cap1Lore,Cap2Lore, SalaSegunda, MainScene, SalaTercera, SalaCuarta],
   physics: { default: "arcade", arcade: { debug: false } }
 };
 if (!window.__phaserGameCreated) {

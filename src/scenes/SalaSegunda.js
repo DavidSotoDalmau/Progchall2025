@@ -218,8 +218,8 @@ this.dialogueGroup.clear(true, true);
 
         this.contextMenuGroup = this.add.group();
 
-        const menuX = 700;
-        const menuY = 500;
+        const menuX = 1080;
+        const menuY = 550;
         const options = ['Examinar', 'Usar'];
 
         options.forEach((option, index) => {

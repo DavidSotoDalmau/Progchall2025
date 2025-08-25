@@ -2,8 +2,13 @@ export default class SalaCuarta extends Phaser.Scene {
     constructor() {
         super('SalaCuarta');
     }
-
+preload() {
+  this.load.audio("journey", "assets/journey.mp3");
+}
     create() {
+		 this.sound.stopAll();
+		 this.music = this.sound.add("journey", { volume: 0.5 });
+this.music.play();
 		console.log(this.scene.manager.keys);
         // Fondo negro
         this.cameras.main.setBackgroundColor('#000000');
@@ -28,6 +33,18 @@ export default class SalaCuarta extends Phaser.Scene {
         }).setInteractive({ useHandCursor: true });
 
         startButton.on('pointerdown', () => {
+			this.sound.stopAll();
+
+  // 2. Resetear el estado
+  this.gs.inventory = [];
+  this.gs.flags = {
+      hasExaminedMisteriousObject: false,
+            entered: false,
+			tarjetarecogida: false,
+			movilactivo:false,
+			tarjetaactiva:false
+    // añade cualquier otra flag que uses
+  };
             this.scene.start('LoreScene');
         });
     }

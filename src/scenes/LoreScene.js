@@ -2,8 +2,12 @@ export default class LoreScene extends Phaser.Scene {
     constructor() {
         super('LoreScene');
     }
-
+preload() {
+  this.load.audio("introMusic", "assets/intro.mp3");
+}
     create() {
+		this.music = this.sound.add("introMusic", { volume: 0.5 });
+this.music.play();
 		console.log(this.scene.manager.keys);
         // Fondo negro
         this.cameras.main.setBackgroundColor('#000000');
@@ -29,6 +33,7 @@ export default class LoreScene extends Phaser.Scene {
         }).setInteractive({ useHandCursor: true });
 startButton.setOrigin(0.5);
         startButton.on('pointerdown', () => {
+			this.music.stop();
             this.scene.start('Cap1Lore');
         });
     }

@@ -77,8 +77,8 @@ g.fillRect(0, this.scale.height - 80, this.scale.width, 80);
 		{
 			 this.contextMenuGroup = this.add.group();
 
-        const menuX = 700;
-        const menuY = 500;
+        const menuX = 1080;
+        const menuY = 550;
         const options = ['Llamar', 'Jugar'];
 
         options.forEach((option, index) => {
@@ -101,8 +101,8 @@ g.fillRect(0, this.scale.height - 80, this.scale.width, 80);
 
         this.contextMenuGroup = this.add.group();
 
-        const menuX = 700;
-        const menuY = 500;
+        const menuX = 1080;
+        const menuY = 550;
         const options = ['Examinar', 'Usar'];
 
         options.forEach((option, index) => {
@@ -228,7 +228,7 @@ this.dialogueBox.setDepth(2);
       //this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
 
         this.pressureZone.on('pointerdown', () => {
-            this.scene.start('SalaCuarta');
+            this.scene.start('Cap2Lore');
         });
 					}
         

@@ -10,10 +10,16 @@ export default class MainScene extends Phaser.Scene {
         this.load.image('background', 'assets/fondo.png');
         this.load.image('player', 'assets/personaje.png');
         this.load.image('item', 'assets/objeto.png');
+		this.load.audio("ambient", "assets/ambientsound.mp3");
     }
 
     create() {
 		this.gs = this.registry.get('gameState') || gameState;
+
+if (!this.music || !this.music.isPlaying) {
+  this.music = this.sound.add("ambient", { loop: true, volume: 0.5 });
+  this.music.play();
+}
 
         this.contextMenuGroup = null;
         this.selectedInventoryItem = null;
@@ -206,9 +212,9 @@ this.item = this.add.sprite(170, 620, 'item').setInteractive({ useHandCursor: tr
                     this.showDialogue('¿Dónde quieres que las use? Aquí no hay ningún lector...');
                 } else if (itemName === 'Carpeta') {
                     this.showDialogue('Abres la Carpeta, hay varios documentos corporativos, deberías pensar en ir entrando al edificio.');
-					this.zoneDebug = this.add.graphics();
-					this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
-					this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
+					//this.zoneDebug = this.add.graphics();
+					//this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
+					//this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
                 } else {
                     this.showDialogue(`No puedes usar el ${itemName} aquí.`);
                 }
