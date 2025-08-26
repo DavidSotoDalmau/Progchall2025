@@ -6,7 +6,9 @@ export class GameState {
             entered: false,
             tarjetarecogida: false,
             movilactivo: false,
-            tarjetaactiva: false
+            tarjetaactiva: false,
+			hasTheCardNumber:false,
+			tiempopasa:false
         };
     }
 

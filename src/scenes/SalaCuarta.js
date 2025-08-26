@@ -60,7 +60,9 @@ this.gs = this.registry.get('gameState') || gameState;
                 entered: false,
                 tarjetarecogida: false,
                 movilactivo: false,
-                tarjetaactiva: false
+                tarjetaactiva: false,
+				hasTheCardNumber:false,
+			tiempopasa:false
                 // añade cualquier otra flag que uses
             };
             this.scene.start('LoreScene');

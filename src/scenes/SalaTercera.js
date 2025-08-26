@@ -11,6 +11,7 @@ export default class SalaTercera extends Phaser.Scene {
         this.load.image('background3', 'assets/fondoe3.png');
         this.load.image('backgroundr3', 'assets/fondor3.png');
         this.load.image('backgroundg3', 'assets/fondog3.png');
+        this.load.image('npcanna', 'assets/AnnaPons.png');
     }
 
     create() {
@@ -32,10 +33,10 @@ export default class SalaTercera extends Phaser.Scene {
             })
             .setRectangleDropZone(80, 150);
 
-        this.zoneDebug = this.add.graphics();
-        this.zoneDebug.setDepth(5);
-        this.zoneDebug.lineStyle(2, 0x0000ff00, 0.5);
-        this.zoneDebug.strokeRectShape(this.pressureZonetimbre.getBounds());
+        //this.zoneDebug = this.add.graphics();
+        //this.zoneDebug.setDepth(5);
+        //this.zoneDebug.lineStyle(2, 0x0000ff00, 0.5);
+        //this.zoneDebug.strokeRectShape(this.pressureZonetimbre.getBounds());
 
         this.pressureZonetimbre.on('pointerdown', () => {
             this.showDialogue('Parece que el timbre no funciona. Prueba con la tarjeta.');
@@ -192,7 +193,8 @@ export default class SalaTercera extends Phaser.Scene {
                 this.gs.setFlag('hasExaminedMisteriousObject');
                 this.updateInventoryDisplay();
             } else if (itemName === 'tarjetas de acceso') {
-                this.showDialogue('Es un porta-tarjetas con el logotipo de ERNI. Quizá abra alguna puerta cercana.');
+                this.showDialogue('Una de las tarjetas tiene el número 49382 impreso en una de sus caras.');
+                this.gs.setFlag('hasTheCardNumber', true)
             } else if (itemName === 'Carpeta') {
                 this.showDialogue('Una carpeta con el logo de ERNI.');
             } else {
@@ -209,7 +211,9 @@ export default class SalaTercera extends Phaser.Scene {
             break;
         case 'Jugar':
             this.showDialogue(`Juegas un rato con ${itemName}.`);
-
+            if (this.gs.getFlag('tarjetaactiva')) {
+                this.gs.setFlag('tiempopasa', true);
+            }
             break;
         case 'Usar':
             if (itemName === 'objeto misterioso') {
@@ -263,40 +267,45 @@ export default class SalaTercera extends Phaser.Scene {
                         }
                     });
                 } else {
-                    this.showDialogue('Usas la tarjeta y el lector parpadea en verde, puedes entrar.');
-                    const usableHeight = this.scale.height - 80;
-                    const bgBase = this.add.image(0, 40, 'background3').setOrigin(0, 0);
-                    this.dialogueBox.setDepth(2);
-                    const scaleX = this.scale.width / bgBase.width;
-                    const scaleY = usableHeight / bgBase.height;
-                    const scale = Math.max(scaleX, scaleY);
+                    if (this.gs.getFlag('tiempopasa')) {
+                        this.showDialogue('Usas la tarjeta y el lector parpadea en verde, puedes entrar.');
+                        const usableHeight = this.scale.height - 80;
+                        const bgBase = this.add.image(0, 40, 'background3').setOrigin(0, 0);
+                        this.dialogueBox.setDepth(2);
+                        const scaleX = this.scale.width / bgBase.width;
+                        const scaleY = usableHeight / bgBase.height;
+                        const scale = Math.max(scaleX, scaleY);
 
-                    bgBase.setScale(scale).setDepth(0).setVisible(true);
+                        bgBase.setScale(scale).setDepth(0).setVisible(true);
 
-                    bgBase.y -= 140;
-                    this.pressureZone = this.add.zone(320, 350, 180, 500)
-                        .setOrigin(0.5)
-                        .setInteractive({
-                            useHandCursor: true
-                        })
-                        .setRectangleDropZone(80, 150);
+                        bgBase.y -= 140;
+                        this.pressureZone = this.add.zone(320, 350, 180, 500)
+                            .setOrigin(0.5)
+                            .setInteractive({
+                                useHandCursor: true
+                            })
+                            .setRectangleDropZone(80, 150);
 
-                    //this.zoneDebug = this.add.graphics();
-                    //this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
-                    //this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
+                        //this.zoneDebug = this.add.graphics();
+                        //this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
+                        //this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
 
-                    this.pressureZone.on('pointerdown', () => {
-                        this.scene.start('Cap2Lore');
-                    });
+                        this.pressureZone.on('pointerdown', () => {
+                            this.scene.start('Cap2Lore');
+                        });
+                    } else {
+                        this.showDialogue('te han dicho que esperes un par de minutos, ¿No tienes nada para pasar el rato?.');
+                    }
                 }
-
-            } else if (itemName === 'Carpeta') {
-                this.showDialogue('Abres la Carpeta, hay varios documentos corporativos, encuentras el número de telefono para emergencias: 936677776.');
-                this.gs.setFlag("movilactivo", true);
             } else {
-                this.showDialogue(`No puedes usar ${itemName} aquí.`);
+                if (itemName === 'Carpeta') {
+                    this.showDialogue('Abres la Carpeta, hay varios documentos corporativos, encuentras el número de telefono para emergencias: 936677776.');
+                    this.gs.setFlag("movilactivo", true);
+                } else {
+                    this.showDialogue(`No puedes usar ${itemName} aquí.`);
+                }
+                break;
             }
-            break;
         }
     }
 
@@ -341,6 +350,327 @@ export default class SalaTercera extends Phaser.Scene {
 
             this.inventoryGroup.add(itemText);
         });
+    }
+	startDialogueWithNPC() {
+    if (this.npcContainer) {
+        this.closeNPC(); // Limpieza previa si quedó algo
+    }
+
+    this.dialogueGroupnpc = this.add.group();
+
+    const CIRCLE_SIZE = 250;
+    const RADIUS = CIRCLE_SIZE / 2;
+
+    // Crear el sprite primero (sin escalar todavía)
+    const sprite = this.add.sprite(0, 0, 'npcanna').setOrigin(0.5);
+    const fitScale = Math.min(CIRCLE_SIZE / sprite.width, CIRCLE_SIZE / sprite.height);
+    sprite.setScale(fitScale);
+
+    const cropSize = Math.floor(CIRCLE_SIZE / fitScale);
+    const cropX = sprite.width / 2 - cropSize / 2;
+    const cropY = sprite.height / 2 - cropSize / 2;
+
+    sprite.setCrop(cropX, cropY, cropSize, cropSize);
+
+    // Aro decorativo
+    const ring = this.add.graphics();
+    ring.lineStyle(3, 0xffffff, 0.9);
+    ring.strokeCircle(0, 0, RADIUS);
+
+    // Crear container en coordenadas absolutas
+    this.npcContainer = this.add.container(900, 275, [sprite, ring]);
+
+    // Animación flotante
+    this.npcTween = this.tweens.add({
+        targets: this.npcContainer,
+        y: '+=10',
+        duration: 1500,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.inOut'
+    });
+
+    // Traer al frente el container
+    this.children.bringToTop(this.npcContainer);
+
+    // Añadir diálogo
+    const npcResponse = this.add.text(740, 440, "ERNI Consulting, ¡buenos días!", {
+        font: '18px monospace',
+        fill: '#ffffffff',
+        wordWrap: { width: 560 }
+    });
+    this.dialogueGroupnpc.add(npcResponse);
+
+    const options = [
+        "¡Hola! no me funciona la tarjeta!",
+        "¿Quien eres?",
+        "Nada, gracias."
+    ];
+
+    options.forEach((option, index) => {
+        const used = this.dialogueUsedOptions?.[option];
+        const optionText = this.add.text(700, 460 + index * 25, option, {
+            font: '16px monospace',
+            fill: used ? '#888888' : '#00ff00',
+            backgroundColor: '#222222',
+            padding: { x: 5, y: 3 }
+        }).setInteractive({ useHandCursor: true });
+
+        optionText.on('pointerdown', () => {
+            this.dialogueUsedOptions[option] = true;
+            this.dialogueGroupnpc.clear(true, true);
+            this.showDialogueResponse(option);
+        });
+
+        this.dialogueGroupnpc.add(optionText);
+    });
+}/*
+    startDialogueWithNPC() {
+        // Limpia posibles restos anteriores
+        if (this.npcContainer) {
+            this.closeNPC(); // asegura limpieza antes de reiniciar
+        } // evita duplicados
+
+        this.dialogueGroupnpc = this.add.group(); // evita duplicados
+
+        const CIRCLE_SIZE = 250;
+        const RADIUS = CIRCLE_SIZE / 2;
+
+        // Container en la posición del retrato
+        this.npcContainer = this.add.container(900, 275);
+
+        // Sprite centrado en el container
+        this.npcSprite = this.add.sprite(0, 0, 'npcanna').setOrigin(0.5).setDepth(2000);
+        const fitScale = Math.min(CIRCLE_SIZE / this.npcSprite.width, CIRCLE_SIZE / this.npcSprite.height);
+        this.npcSprite.setScale(fitScale);
+
+        // Graphics para máscara (coordenadas locales del container)
+        this.npcMaskGfx = this.add.graphics();
+        this.npcMaskGfx.fillStyle(0xffffff, 1);
+        this.npcMaskGfx.fillCircle(0, 0, RADIUS);
+        this.npcMaskGfx.setVisible(false);
+
+        // GeometryMask y asignación al sprite
+        this.npcGeoMask = this.npcMaskGfx.createGeometryMask();
+        this.npcSprite.setMask(this.npcGeoMask);
+
+        // Aro decorativo (Graphics dentro del container)
+        const ring = this.add.graphics();
+        ring.lineStyle(3, 0xffffff, 0.9);
+        ring.strokeCircle(0, 0, RADIUS);
+        this.npcSprite.setVisible(true);
+        // Meter todo al container (sprite, ring). La máscara gfx no hace falta meterla,
+        // pero puedes incluirla; aquí la meto para que se destruya con el container si quisieras.
+        this.npcContainer.add([ring, this.npcMaskGfx, this.npcSprite, ]);
+
+        // Tween solo del container (así no quedan restos)
+        this.npcTween = this.tweens.add({
+            targets: this.npcContainer,
+            y: '+=10',
+            duration: 1500,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.inOut'
+        });
+        this.children.bringToTop(this.npcContainer);
+
+        const background = this.add.graphics();
+        background.fillStyle(0x000000, 0.8);
+        background.fillRect(740, 180, 300, 20);
+        this.dialogueGroupnpc.add(background);
+
+        const npcResponse = this.add.text(740, 440, "ERNI Consulting, ¡buenos días!", {
+            font: '18px monospace',
+            fill: '#ffffff',
+            wordWrap: {
+                width: 560
+            }
+        });
+        this.dialogueGroupnpc.add(npcResponse);
+
+        const options = [
+            "¡Hola! no me funciona la tarjeta!",
+            "¿Quien eres?"
+        ];
+
+        options.push("Nada, gracias.");
+        options.forEach((option, index) => {
+            const used = this.dialogueUsedOptions[option];
+            const optionText = this.add.text(700, 460 + index * 25, option, {
+                font: '16px monospace',
+                fill: used ? '#888888' : '#00ff00',
+                backgroundColor: '#222222',
+                padding: {
+                    x: 5,
+                    y: 3
+                }
+            }).setInteractive({
+                useHandCursor: true
+            });
+
+            optionText.on('pointerdown', () => {
+                this.dialogueUsedOptions[option] = true;
+                this.dialogueGroupnpc.clear(true, true);
+                this.showDialogueResponse(option);
+            });
+
+            this.dialogueGroupnpc.add(optionText);
+        });
+    }*/
+    closeNPC() {
+        // 1) Para tweens que afecten a estos objetos (si no existen, no pasa nada)
+        if (this.npcTween) {
+            this.npcTween.stop();
+            this.tweens.remove(this.npcTween);
+            this.npcTween = null;
+        }
+
+        // 2) Quitar y destruir máscara
+        if (this.npcSprite) {
+            this.npcSprite.clearMask(); // quita el mask del sprite
+            this.npcSprite.destroy();
+        }
+        if (this.npcGeoMask) {
+            this.npcGeoMask.destroy(); // Display.GeometryMask
+            this.npcGeoMask = null;
+        }
+        if (this.npcMaskGfx) {
+            this.npcMaskGfx.destroy(); // Graphics usado para la máscara
+            this.npcMaskGfx = null;
+        }
+
+        // 3) Destruir el container (incluye sprite, ring, textos si están dentro)
+        if (this.npcContainer) {
+            this.npcContainer.destroy(true);
+            this.npcContainer = null;
+        }
+
+        // 4) Grupo de diálogo si quedó fuera del container
+        if (this.dialogueGroupnpc) {
+            this.dialogueGroupnpc.destroy(true);
+            this.dialogueGroupnpc = null;
+        }
+        if (this.ring) {
+            this.ring.destroy(true);
+            this.ring = null;
+        }
+    }
+    showDialogueResponse(option) {
+        // Limpia opciones anteriores
+        this.dialogueGroupnpc.clear(true, true);
+
+        // Si la opción es “Nada, gracias.”, cerramos sin mostrar respuesta
+        if (option === "Nada, gracias.") {
+
+            this.dialogueGroupnpc.setVisible(false);
+            this.closeNPC();
+            return;
+        }
+        this.dialogueGroupnpc.setVisible(true);
+        if (option === "¡Hola! no me funciona la tarjeta!") {
+            this.dialogueGroupnpc.clear(true, true);
+
+            const line1 = this.add.text(700, 500, "Vale, dame el número", {
+                font: '18px monospace',
+                fill: '#ffffff',
+                wordWrap: {
+                    width: 560
+                }
+            });
+            this.dialogueGroupnpc.add(line1);
+
+            this.time.delayedCall(1200, () => {
+                const hasNumber = this.gs.getFlag('hasTheCardNumber');
+
+                const respuestaJugador = hasNumber
+                     ? "49382"
+                     : "No tengo el número";
+
+                const reply = this.add.text(700, 525, `${respuestaJugador}`, {
+                    font: '18px monospace',
+                    fill: '#ffff00',
+                    wordWrap: {
+                        width: 560
+                    }
+                });
+                this.dialogueGroupnpc.add(reply);
+
+                this.time.delayedCall(1200, () => {
+                    const respuestaFinal = hasNumber
+                         ? "Vale, dame un par de minutos y prueba de nuevo."
+                         : "Ok, míralo cuando puedas y me vuelves a llamar.";
+
+                    const npcReply = this.add.text(700, 550, `${respuestaFinal}`, {
+                        font: '18px monospace',
+                        fill: '#ffffff',
+                        wordWrap: {
+                            width: 560
+                        }
+                    });
+                    this.dialogueGroupnpc.add(npcReply);
+
+                    if (hasNumber) {
+                        this.gs.setFlag('tarjetaactiva', true);
+                    }
+
+                    const backButton = this.add.text(700, 575, '< Volver', {
+                        font: '16px monospace',
+                        fill: '#00ffff',
+                        backgroundColor: '#111111',
+                        padding: {
+                            x: 8,
+                            y: 4
+                        }
+                    }).setInteractive({
+                        useHandCursor: true
+                    });
+
+                    backButton.on('pointerdown', () => {
+                        this.dialogueGroupnpc.clear(true, true);
+                        this.startDialogueWithNPC();
+                    });
+
+                    this.dialogueGroupnpc.add(backButton);
+                });
+            });
+
+            return; // evita que el flujo continúe con otras respuestas
+        }
+        if (option === "¿Quien eres?") {
+            this.dialogueGroupnpc.clear(true, true);
+            this.time.delayedCall(1200, () => {
+
+                const npcReply = this.add.text(700, 480, "Soy Anna Pons, la Office Manager de ERNI España y me encargo de que todo funcione en las oficinas… incluso cuando nada quiere funcionar", {
+                    font: '18px monospace',
+                    fill: '#ffffff',
+                    wordWrap: {
+                        width: 560
+                    }
+                });
+                this.dialogueGroupnpc.add(npcReply);
+
+                const backButton = this.add.text(700, 560, '< Volver', {
+                    font: '16px monospace',
+                    fill: '#00ffff',
+                    backgroundColor: '#111111',
+                    padding: {
+                        x: 8,
+                        y: 4
+                    }
+                }).setInteractive({
+                    useHandCursor: true
+                });
+
+                backButton.on('pointerdown', () => {
+                    this.dialogueGroupnpc.clear(true, true);
+                    this.startDialogueWithNPC();
+                });
+
+                this.dialogueGroupnpc.add(backButton);
+            });
+        }
+
+        return;
     }
     showDialer() {
         // Limpia si ya estaba abierto
@@ -402,7 +732,7 @@ export default class SalaTercera extends Phaser.Scene {
             });
 
             // Botón de cerrar
-            const closeBtn = this.add.text(500, 600, '[ Cerrar ]', {
+            const closeBtn = this.add.text(510, 600, '[ Cerrar ]', {
                 font: '18px monospace',
                 fill: '#ff4444',
                 backgroundColor: '#000000',
@@ -436,8 +766,7 @@ export default class SalaTercera extends Phaser.Scene {
                 if (this.dialedNumber === "112") {
                     this.showDialogue("Has llamado a emergencias. 😬");
                 } else if (this.dialedNumber === "936677776") {
-                    this.showDialogue(`Hablas con Anna Pons, le explicas el problema con la tarjeta y te lo arregla. ¡Prueba de nuevo!.`);
-                    this.gs.setFlag('tarjetaactiva', true);
+                    this.startDialogueWithNPC();
                 } else {
                     this.showDialogue(`Número ${this.dialedNumber} no disponible.`);
                 }
@@ -448,4 +777,5 @@ export default class SalaTercera extends Phaser.Scene {
             this.showDialogue(`No sabes a donde llamar, quizá el número esté por ahí...`);
         }
     }
+
 }
