@@ -294,7 +294,7 @@ export default class SalaTercera extends Phaser.Scene {
                         //this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
 
                         this.pressureZone.on('pointerdown', () => {
-                            this.scene.start('Cap2Lore');
+                            this.scene.start('StarWarsScene');
                         });
                     } else {
                         this.showDialogue('te han dicho que esperes un par de minutos, ¿No tienes nada para pasar el rato?.');

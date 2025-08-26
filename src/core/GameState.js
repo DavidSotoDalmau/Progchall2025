@@ -8,7 +8,8 @@ export class GameState {
             movilactivo: false,
             tarjetaactiva: false,
 			hasTheCardNumber:false,
-			tiempopasa:false
+			tiempopasa:false,
+			sabesnumeros:false
         };
     }
 

@@ -5,6 +5,7 @@ import SalaSegunda from "./scenes/SalaSegunda.js";
 import SalaTercera from "./scenes/SalaTercera.js";
 import SalaCuarta from "./scenes/SalaCuarta.js";
 import MainScene from "./scenes/MainScene.js";
+import StarWarsScene from "./scenes/cap2Text.js";
 import {
     GameState
 }
@@ -18,7 +19,7 @@ const config = {
     width: 1280,
     height: 720,
     parent: "game-container",
-    scene: [LoreScene, HelpScene, Cap1Lore, Cap2Lore, SalaSegunda, MainScene, SalaTercera, SalaCuarta],
+    scene: [LoreScene, HelpScene, Cap1Lore, Cap2Lore, SalaSegunda, MainScene, SalaTercera, SalaCuarta,StarWarsScene],
     physics: {
     default:
         "arcade",
