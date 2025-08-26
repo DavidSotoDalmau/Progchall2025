@@ -373,12 +373,10 @@ export default class SalaTercera extends Phaser.Scene {
     sprite.setCrop(cropX, cropY, cropSize, cropSize);
 
     // Aro decorativo
-    const ring = this.add.graphics();
-    ring.lineStyle(3, 0xffffff, 0.9);
-    ring.strokeCircle(0, 0, RADIUS);
+    
 
     // Crear container en coordenadas absolutas
-    this.npcContainer = this.add.container(900, 275, [sprite, ring]);
+    this.npcContainer = this.add.container(900, 275, [sprite]);
 
     // Animación flotante
     this.npcTween = this.tweens.add({
@@ -675,6 +673,7 @@ export default class SalaTercera extends Phaser.Scene {
     showDialer() {
         // Limpia si ya estaba abierto
         if (this.gs.getFlag("movilactivo")) {
+			 this.dialerGroup = this.add.group();
             if (this.dialerGroup) {
                 this.dialerGroup.clear(true, true);
             }
