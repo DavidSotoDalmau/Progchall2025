@@ -984,6 +984,7 @@ for (let i = 0; i < PIECES; i++) {
                     width: 560
                 }
             });
+			this.dialogueGroupnpc.add(reply);
             const backButton = this.add.text(700, 575, '< Volver', {
                 font: '16px monospace',
                 fill: '#00ffff',
