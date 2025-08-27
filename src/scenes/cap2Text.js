@@ -4,9 +4,13 @@ export default class StarWarsScene extends Phaser.Scene {
   preload() {
     // ▼ negro opaco (no uses #FF000000 porque AA=00 = alfa 0)
     this.cameras.main.setBackgroundColor('#000000');
+	this.load.audio("StarsMusic", "assets/title.mp3");
   }
 
   create() {
+	  this.sound.stopAll();
+		 this.music = this.sound.add("CapMusic", { volume: 0.5 });
+this.music.play();
     const { width: W, height: H } = this.scale;
 
     // --- STARFIELD (tileSprite con tween, sin update) ---
@@ -131,6 +135,7 @@ crawlCam.setMask(bm1);
       duration: 20000,
       ease: 'Linear',
       onComplete: () => {
+		  this.music.stop();
 		  this.scene.start('Cap2Lore');
         //mask2Sprite.destroy(); 
 		//this.textures.remove(mask2Key);
