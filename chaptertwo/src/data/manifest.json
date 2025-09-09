@@ -1,0 +1,24 @@
+{
+  "assets_detected": [
+    {
+      "type": "image",
+      "args": "'background2', 'assets/fondo2.png'"
+    },
+    {
+      "type": "image",
+      "args": "'npc', 'assets/npc.png'"
+    },
+    {
+      "type": "image",
+      "args": "'background', 'assets/fondo.png'"
+    },
+    {
+      "type": "image",
+      "args": "'player', 'assets/personaje.png'"
+    },
+    {
+      "type": "image",
+      "args": "'item', 'assets/objeto.png'"
+    }
+  ]
+}
