@@ -53,6 +53,8 @@ export default class DuelScene extends Phaser.Scene {
   }
 
   create() {
+	  this.usedInsults = new Set();    // textos de insultos ya usados por el jugador
+this.usedResponses = new Set(); 
     // Fondo y sprites
 	this.pageSize = 7;           // máximo de opciones visibles por página
 this._allOptions = [];       // cache de todas las opciones
@@ -70,21 +72,16 @@ this._navButtons = { prev: null, next: null }; // refs a botones de navegación
     this.ui.playerBubble = this.createSpeechBubble(240, 300, 340, 120);
     this.ui.npcBubble = this.createSpeechBubble(620, 300, 340, 120);
 	switch (this.npcId) {
-    case 1: this.setBubbleText(this.ui.npcBubble,  "Parar a un mentor gruñón puede ser perjudicial para la salud."); break;
-    case 2: this.setBubbleText(this.ui.npcBubble,  "Testearé tu tolerancia al dolor con implacable indiferencia."); break;
-    case 3: this.setBubbleText(this.ui.npcBubble,  "Hay un backlog esperándome, ¿Qué quieres?"); break;}
+    case 1: this.setBubbleText(this.ui.npcBubble,  "Parar a un mentor gruñón puede ser perjudicial para la salud.");this.npcname='Mentor gruñón'; break;
+    case 2: this.setBubbleText(this.ui.npcBubble,  "Testearé tu tolerancia al dolor con implacable indiferencia.");this.npcname='QA implacable'; break;
+    case 3: this.setBubbleText(this.ui.npcBubble,  "Hay un backlog esperándome, ¿Qué quieres?"); this.npcname="PO con prisas";break;}
  this.setBubbleText(this.ui.playerBubble, 'Soy ERNIman! preparate para morir!');
 
 
-    this.ui.infoText = this.add.text(600, 20, 'Duelo de ingenio', { fontFamily: 'sans-serif', fontSize: '20px', color: '#ffffff',
+    this.ui.infoText = this.add.text(600, 20, 'Encuentro fortuito con ' + this.npcname, { fontFamily: 'sans-serif', fontSize: '26px', color: '#ff0000',
   backgroundColor: '#000000', // ← fondo negro sólido
   padding: { x: 6, y: 3 }  }).setOrigin(0.5, 0);   // ← opcional: margen interno }).setOrigin(0.5, 0);
-    this.ui.arsenalHint = this.add.text(600, 60, '', { fontFamily: 'sans-serif', fontSize: '14px', color: '#dddddd',
-  backgroundColor: '#000000', // ← fondo negro sólido
-  padding: { x: 6, y: 3 }    }).setOrigin(0.5, 0); // ← opcional: margen interno }).setOrigin(0.5, 0);
-    this.ui.scoreText = this.add.text(600, 90, '', { fontFamily: 'monospace', fontSize: '16px', color: '#ffe082',
-  backgroundColor: '#000000', // ← fondo negro sólido
-  padding: { x: 6, y: 3 }    }).setOrigin(0.5, 0);
+    
     this.ui.choiceContainer = this.add.container(0, 0);
 
     // Cargar líneas
@@ -96,7 +93,7 @@ this._navButtons = { prev: null, next: null }; // refs a botones de navegación
     this.buildNpcKnowledge();
 
     // Comienza turno NPC
-    this.updateScoreUI();
+
     this.startPlayerTurn();
   }
 colorForNpcId(id) {
@@ -136,19 +133,27 @@ colorForNpcId(id) {
 
   this.setBubbleText(this.ui.playerBubble, '');
   const options = this.buildOptionsWithCorrect(line.respuestaCorrecta);
+if (!options.length) {
+  // Sin respuestas válidas restantes → fallo automático ligero
+  this.playerLives -= 1;
 
+  if (this.playerLives <= 0) return this.endDuel(false);
+  this.time.delayedCall(600, () => this.startNpcTurn());
+  return;
+}
   this.showChoices(options, (chosen) => {
+	  this.usedResponses.add(chosen);
     const correct = chosen === line.respuestaCorrecta;
     this.setBubbleText(this.ui.playerBubble, chosen);
 
     if (correct) {
       this.playerScore += 1;
-      this.updateScoreUI();
+      
       if (this.playerScore >= this.targetScore) return this.endDuel(true);
       this.time.delayedCall(1000, () => this.startPlayerTurn());
     } else {
       this.playerLives -= 1;
-      this.updateScoreUI();
+   
       if (this.playerLives <= 0) return this.endDuel(false);
       // Reintenta turno NPC, pero con OTRO insulto (no el mismo)
       this.time.delayedCall(1000, () => this.startNpcTurn());
@@ -168,6 +173,11 @@ colorForNpcId(id) {
     }
 
     const insultOptions = this.buildInsultOptionsFromArsenal(arsenal);
+	if (!insultOptions.length) {
+  this.setBubbleText(this.ui.playerBubble, '(Me he quedado sin insultos útiles...)');
+  this.time.delayedCall(900, () => this.startNpcTurn());
+  return;
+}
     /* switch (this.npcId) {
     case 1: this.setBubbleText(this.ui.npcBubble,  "Parar a un mentor gruñón puede ser perjudicial para la salud.");
     case 2: this.setBubbleText(this.ui.npcBubble,  "Testearé tu tolerancia al dolor con implacable indiferencia.");
@@ -176,6 +186,7 @@ colorForNpcId(id) {
 
     this.showChoices(insultOptions, (playerInsult) => {
 		this.setBubbleText(this.ui.npcBubble, '');
+		this.usedInsults.add(playerInsult);
       const line = this.lines.find(l => l.insulto === playerInsult);
       if (!line) { this.setBubbleText(this.ui.npcBubble, '(El NPC te mira confuso)'); this.time.delayedCall(1000, () => this.startNpcTurn()); return; }
 
@@ -189,7 +200,7 @@ colorForNpcId(id) {
           this.setBubbleText(this.ui.npcBubble, line.respuestaCorrecta);
           this.addResponseToArsenal(line.respuestaCorrecta);
 		  this.playerLives -= 1;
-		  this.updateScoreUI();
+		
           this.time.delayedCall(1500, () => this.startNpcTurn());
         });
       } else {
@@ -198,7 +209,7 @@ colorForNpcId(id) {
         this.time.delayedCall(1500, () => {
           this.setBubbleText(this.ui.npcBubble, alt);
 		  this.playerScore += 1;
-		  this.updateScoreUI();
+	
           // No se desbloquea respuesta
           this.time.delayedCall(1500, () => this.startPlayerTurn());
         });
@@ -247,14 +258,14 @@ addInsultToArsenal(insultText) {
   if (!gameState.arsenalInsultos.includes(insultText)) {
     gameState.arsenalInsultos.push(insultText);
   }
-  this.showArsenalHint();
+ 
 }
 
 addResponseToArsenal(responseText) {
   if (!gameState.arsenalRespuestas.includes(responseText)) {
     gameState.arsenalRespuestas.push(responseText);
   }
-  this.showArsenalHint();
+ 
 }
 
 getArsenalInsults() {
@@ -267,18 +278,14 @@ playerKnowsResponse(line) {
   return gameState.arsenalRespuestas.includes(line.respuestaCorrecta);
 }
 
-showArsenalHint() {
-  this.ui.arsenalHint.setText(
-    `Arsenal: Insultos ${gameState.arsenalInsultos.length} • Respuestas ${gameState.arsenalRespuestas.length}`
-  );
-}
+
 
   // ---------------- UI helpers ----------------
   createSpeechBubble(x, y, w, h) {
     const g = this.add.graphics();
     g.fillStyle(0x000000, 1);
     g.fillRoundedRect(x, y, w, h, 12);
-    const text = this.add.text(x + 10, y + 10, '', { fontFamily: 'serif', fontSize: '16px', wordWrap: { width: w - 20 } });
+    const text = this.add.text(x + 10, y + 10, '', { fontFamily: 'serif', fontSize: '20px', wordWrap: { width: w - 20 } });
     return { box: g, text };
   }
 
@@ -310,7 +317,7 @@ renderOptionsPage() {
     const y = startY + idx * spacing;
     const txt = this.add.text(centerX, y, label, {
       fontFamily: 'sans-serif',
-      fontSize: '16px',
+      fontSize: '20px',
       color: '#ffffff',
       backgroundColor: 'rgba(0,0,0,1)'
     })
@@ -396,16 +403,9 @@ clearChoices() {
     this.ui.choiceContainer.removeAll(true);
   }
 
-  showArsenalHint() {
-    const insults = (this.registry.get('arsenalInsultos') || []).length;
-    const replies = (this.registry.get('arsenalRespuestas') || []).length;
-    this.ui.arsenalHint.setText(`Arsenal: Insultos ${insults} • Respuestas ${replies}`);
-  }
 
-  updateScoreUI() {
-    this.ui.scoreText.setText(`Puntos: ${this.playerScore}  |  Vidas: ${this.playerLives}`);
-    this.showArsenalHint();
-  }
+
+  
 
   endDuel(playerWon) {
     this.clearChoices();
@@ -430,7 +430,7 @@ clearChoices() {
   if (!options.includes(correctText)) {
     options = options.filter(txt => txt !== correctText);
   }
-
+options = options.filter(txt => !this.usedResponses.has(txt));
   // Rellena con señuelos genéricos para que haya al menos 3 opciones
   const MIN_OPTIONS = 3;
   if (options.length < MIN_OPTIONS) {
@@ -463,11 +463,20 @@ clearChoices() {
   }
 
   buildInsultOptionsFromArsenal(insultPhrases) {
-    const opts = insultPhrases;
+    const opts = insultPhrases.filter(txt => !this.usedInsults.has(txt));
     
     return opts;
   }
-
+getGenericDecoys(correctText) {
+  const pool = [
+    'Eso suena a envidia de sprint.',
+    'Como tu roadmap, no me impresiona.',
+    'Claro, claro... ¿y tus tests dónde están?',
+    'Gran discurso, cero entregables.',
+    'Promesas y más promesas… ¿y el pull request?',
+  ];
+  return pool.filter(t => t !== correctText).slice(); // copia segura
+}
   // ---------------- Fallback de líneas ----------------
   getFallbackLines() {
     return [
