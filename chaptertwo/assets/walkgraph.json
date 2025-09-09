@@ -1,0 +1,550 @@
+{
+  "nodes": [
+    {
+      "id": "corridor1",
+      "x": 164,
+      "y": 304,
+      "spot": false
+    },
+    {
+      "id": "meeting1",
+      "x": 349,
+      "y": 307,
+      "spot": false
+    },
+    {
+      "id": "openSpace1",
+      "x": 274,
+      "y": 298,
+      "spot": false
+    },
+    {
+      "id": "openSpace2",
+      "x": 281,
+      "y": 143,
+      "spot": false
+    },
+    {
+      "id": "corner1",
+      "x": 313,
+      "y": 122,
+      "spot": false
+    },
+    {
+      "id": "printer",
+      "x": 378,
+      "y": 46,
+      "spot": false
+    },
+    {
+      "id": "wc",
+      "x": 337,
+      "y": 695,
+      "spot": true,
+      "targetScene": "WCScene",
+	  "label": "Servicios"
+    },
+    {
+      "id": "meetingBig",
+      "x": 470,
+      "y": 698,
+      "spot": false
+    },
+    {
+      "id": "n1",
+      "x": 343,
+      "y": 154,
+      "spot": false
+    },
+    {
+      "id": "n2",
+      "x": 469,
+      "y": 630,
+      "spot": false
+    },
+    {
+      "id": "n4",
+      "x": 464,
+      "y": 556,
+      "spot": false
+    },
+    {
+      "id": "n7",
+      "x": 439,
+      "y": 485,
+      "spot": false
+    },
+    {
+      "id": "n8",
+      "x": 393,
+      "y": 450,
+      "spot": false
+    },
+    {
+      "id": "n9",
+      "x": 414,
+      "y": 384,
+      "spot": false
+    },
+    {
+      "id": "n11",
+      "x": 540,
+      "y": 486,
+      "spot": false
+    },
+    {
+      "id": "n12",
+      "x": 645,
+      "y": 490,
+      "spot": false
+    },
+    {
+      "id": "n13",
+      "x": 652,
+      "y": 593,
+      "spot": false
+    },
+    {
+      "id": "n14",
+      "x": 560,
+      "y": 436,
+      "spot": false
+    },
+    {
+      "id": "n15",
+      "x": 565,
+      "y": 398,
+      "spot": false
+    },
+    {
+      "id": "n16",
+      "x": 607,
+      "y": 437,
+      "spot": false
+    },
+    {
+      "id": "n17",
+      "x": 597,
+      "y": 397,
+      "spot": false
+    },
+    {
+      "id": "n18",
+      "x": 739,
+      "y": 450,
+      "spot": false
+    },
+    {
+      "id": "n19",
+      "x": 734,
+      "y": 361,
+      "spot": false
+    },
+    {
+      "id": "n20",
+      "x": 780,
+      "y": 357,
+      "spot": false
+    },
+    {
+      "id": "n21",
+      "x": 684,
+      "y": 358,
+      "spot": false
+    },
+    {
+      "id": "n25",
+      "x": 879,
+      "y": 443,
+      "spot": false
+    },
+    {
+      "id": "n26",
+      "x": 880,
+      "y": 600,
+      "spot": true,
+      "targetScene": "hroffice",
+	  "label": "HR Office"
+    },
+    {
+      "id": "n27",
+      "x": 741,
+      "y": 521,
+      "spot": false
+    },
+    {
+      "id": "n28",
+      "x": 243,
+      "y": 109,
+      "spot": true,
+      "targetScene": "albert",
+	  "label": "Despacho de Albert"
+    },
+    {
+      "id": "n5",
+      "x": 694,
+      "y": 588,
+      "spot": false
+    },
+    {
+      "id": "n6",
+      "x": 607,
+      "y": 601,
+      "spot": false
+    },
+    {
+      "id": "n10",
+      "x": 642,
+      "y": 664,
+      "spot": false
+    },
+    {
+      "id": "n33",
+      "x": 875,
+      "y": 414,
+      "spot": true,
+      "targetScene": "recepcion",
+	  "label": "Reception desk"
+    },
+    {
+      "id": "n22",
+      "x": 731,
+      "y": 388,
+      "spot": false
+    },
+    {
+      "id": "n23",
+      "x": 776,
+      "y": 386,
+      "spot": false
+    },
+    {
+      "id": "n24",
+      "x": 687,
+      "y": 394,
+      "spot": false
+    },
+    {
+      "id": "n3",
+      "x": 314,
+      "y": 634,
+      "spot": false
+    },
+    {
+      "id": "n29",
+      "x": 280,
+      "y": 558,
+      "spot": false
+    },
+    {
+      "id": "n30",
+      "x": 240,
+      "y": 482,
+      "spot": false
+    },
+    {
+      "id": "n34",
+      "x": 225,
+      "y": 449,
+      "spot": false
+    },
+    {
+      "id": "n35",
+      "x": 193,
+      "y": 379,
+      "spot": false
+    },
+    {
+      "id": "n31",
+      "x": 352,
+      "y": 373,
+      "spot": false
+    },
+    {
+      "id": "n32",
+      "x": 414,
+      "y": 295,
+      "spot": false
+    },
+    {
+      "id": "n36",
+      "x": 423,
+      "y": 189,
+      "spot": false
+    },
+    {
+      "id": "n37",
+      "x": 486,
+      "y": 186,
+      "spot": false
+    },
+    {
+      "id": "n38",
+      "x": 482,
+      "y": 240,
+      "spot": false
+    },
+    {
+      "id": "n39",
+      "x": 483,
+      "y": 123,
+      "spot": false
+    },
+    {
+      "id": "n40",
+      "x": 421,
+      "y": 138,
+      "spot": false
+    },
+    {
+      "id": "n41",
+      "x": 420,
+      "y": 237,
+      "spot": true,
+      "targetScene": "cocina",
+	  "label": "Cocina"
+    },
+    {
+      "id": "n42",
+      "x": 239,
+      "y": 432,
+      "spot": true,
+      "targetScene": "alfredo",
+	  "label": "Alfredo Pulcrano"
+    },
+    {
+      "id": "n43",
+      "x": 402,
+      "y": 533,
+      "spot": true,
+      "targetScene": "caro",
+	  "label": "Carolina Lezama"
+    }
+  ],
+  "edges": {
+    "corridor1": [
+      "openSpace1",
+      "n35"
+    ],
+    "meeting1": [
+      "openSpace1",
+      "n1",
+      "n31"
+    ],
+    "openSpace1": [
+      "meeting1",
+      "openSpace2",
+      "corridor1"
+    ],
+    "openSpace2": [
+      "openSpace1",
+      "corner1",
+      "n1",
+      "n28"
+    ],
+    "corner1": [
+      "openSpace2",
+      "printer",
+      "n1"
+    ],
+    "printer": [
+      "corner1"
+    ],
+    "wc": [
+      "meetingBig",
+      "n3"
+    ],
+    "meetingBig": [
+      "wc",
+      "n2"
+    ],
+    "n1": [
+      "corner1",
+      "openSpace2",
+      "meeting1"
+    ],
+    "n2": [
+      "meetingBig",
+      "n4",
+      "n3"
+    ],
+    "n4": [
+      "n2",
+      "n7",
+      "n29",
+      "n43"
+    ],
+    "n7": [
+      "n4",
+      "n8",
+      "n11",
+      "n30"
+    ],
+    "n8": [
+      "n7",
+      "n9",
+      "n34"
+    ],
+    "n9": [
+      "n8",
+      "n31",
+      "n32"
+    ],
+    "n11": [
+      "n7",
+      "n12",
+      "n14"
+    ],
+    "n12": [
+      "n11",
+      "n13",
+      "n16"
+    ],
+    "n13": [
+      "n12",
+      "n5",
+      "n6",
+      "n10"
+    ],
+    "n14": [
+      "n15",
+      "n16",
+      "n11"
+    ],
+    "n15": [
+      "n14"
+    ],
+    "n16": [
+      "n14",
+      "n17",
+      "n18",
+      "n12"
+    ],
+    "n17": [
+      "n16"
+    ],
+    "n18": [
+      "n16",
+      "n25",
+      "n27",
+      "n22"
+    ],
+    "n19": [
+      "n20",
+      "n21",
+      "n22"
+    ],
+    "n20": [
+      "n19"
+    ],
+    "n21": [
+      "n19"
+    ],
+    "n25": [
+      "n18",
+      "n26",
+      "n33"
+    ],
+    "n26": [
+      "n25"
+    ],
+    "n27": [
+      "n18"
+    ],
+    "n28": [
+      "openSpace2"
+    ],
+    "n5": [
+      "n13"
+    ],
+    "n6": [
+      "n13"
+    ],
+    "n10": [
+      "n13"
+    ],
+    "n33": [
+      "n25"
+    ],
+    "n22": [
+      "n18",
+      "n23",
+      "n24",
+      "n19"
+    ],
+    "n23": [
+      "n22"
+    ],
+    "n24": [
+      "n22"
+    ],
+    "n3": [
+      "wc",
+      "n29",
+      "n2"
+    ],
+    "n29": [
+      "n3",
+      "n30",
+      "n4"
+    ],
+    "n30": [
+      "n29",
+      "n34",
+      "n7"
+    ],
+    "n34": [
+      "n30",
+      "n35",
+      "n8",
+      "n42"
+    ],
+    "n35": [
+      "n34",
+      "corridor1",
+      "n31"
+    ],
+    "n31": [
+      "meeting1",
+      "n9",
+      "n35"
+    ],
+    "n32": [
+      "n9",
+      "n41"
+    ],
+    "n36": [
+      "n37",
+      "n40",
+      "n41"
+    ],
+    "n37": [
+      "n36",
+      "n38",
+      "n39"
+    ],
+    "n38": [
+      "n37",
+      "n41"
+    ],
+    "n39": [
+      "n37",
+      "n40"
+    ],
+    "n40": [
+      "n39",
+      "n36"
+    ],
+    "n41": [
+      "n38",
+      "n32",
+      "n36"
+    ],
+    "n42": [
+      "n34"
+    ],
+    "n43": [
+      "n4"
+    ]
+  }
+}
