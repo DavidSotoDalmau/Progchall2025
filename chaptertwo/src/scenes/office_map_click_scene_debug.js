@@ -58,6 +58,15 @@ this.npcActiveIds = new Set(); // ids en uso
   }
 
   create() {
+	  this.npcTooltip = this.add.text(0, 0, '', {
+  fontFamily: 'sans-serif',
+  fontSize: '14px',
+  color: '#ffffff',
+  backgroundColor: 'rgba(0,0,0,0.7)',
+  padding: { x: 6, y: 3 }
+})
+.setDepth(1000)
+.setVisible(false);
     this.add.image(0, 0, 'ofimapped').setOrigin(0, 0);
 	this.tooltipText = this.add.text(0, 0, '', {
 	  fontFamily: 'sans-serif',
@@ -120,8 +129,18 @@ this.npcActiveIds = new Set(); // ids en uso
 // Tooltip spots
   const pointer = this.input.activePointer;
   const spotNode = this.pickNodeNear(pointer.x, pointer.y, 14, true);
+  const hover = this.getNpcUnderPointer(pointer.x, pointer.y, 20); // radio ajustable
+
+if (hover) {
+  const label = this.getNpcLabelById(hover.id);
+  this.npcTooltip.setText(label);
+  this.npcTooltip.setPosition(pointer.x + 12, pointer.y + 12);
+  this.npcTooltip.setVisible(true);
+} else {
+  this.npcTooltip.setVisible(false);
+}
   if (spotNode) {
-    this.tooltipText.setText(spotNode.label || spotNode.id);
+    this.tooltipText.setText(spotNode.label || "");
     this.tooltipText.setPosition(pointer.x + 12, pointer.y + 12);
     this.tooltipText.setVisible(true);
   } else {
@@ -129,6 +148,29 @@ this.npcActiveIds = new Set(); // ids en uso
   }
 
   }
+  getNpcLabelById(id) {
+  switch (id) {
+    case 1: return "Mentor gruñón";
+    case 2: return "QA implacable";
+    case 3: return "PO con prisas";
+    default: return `NPC ${id ?? "?"}`;
+  }
+}
+  getNpcUnderPointer(px, py, radius = 20) {
+  // Prioriza el más cercano si hay varios
+  let best = null;
+  let bestD = Infinity;
+  for (const npc of this.npcs) {
+    const sx = npc.sprite.x, sy = npc.sprite.y;
+    const d = Phaser.Math.Distance.Between(px, py, sx, sy);
+    if (d <= radius && d < bestD) {
+      bestD = d;
+      best = npc;
+    }
+  }
+  return best; // devuelve el objeto npc (con .id, .sprite, etc.)
+}
+  
   pickNodeWithNeighbors(preferredId = null) {
   if (preferredId && (this.edges[preferredId] || []).length > 0)
     return this.nodeById(preferredId);

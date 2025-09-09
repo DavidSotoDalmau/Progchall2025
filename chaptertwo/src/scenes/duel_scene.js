@@ -69,10 +69,22 @@ this._navButtons = { prev: null, next: null }; // refs a botones de navegación
     // Burbujas
     this.ui.npcBubble = this.createSpeechBubble(140, 300, 340, 120);
     this.ui.playerBubble = this.createSpeechBubble(520, 300, 340, 120);
+	switch (this.npcId) {
+    case 1: this.setBubbleText(this.ui.npcBubble,  "Parar a un mentor gruñón puede ser perjudicial para la salud."); break;
+    case 2: this.setBubbleText(this.ui.npcBubble,  "Testearé tu tolerancia al dolor con implacable indiferencia."); break;
+    case 3: this.setBubbleText(this.ui.npcBubble,  "Hay un backlog esperándome, ¿Qué quieres?"); break;}
+ this.setBubbleText(this.ui.playerBubble, 'Soy ERNIman! preparate para morir!');
 
-    this.ui.infoText = this.add.text(500, 20, 'Duelo de ingenio', { fontFamily: 'sans-serif', fontSize: '20px', color: '#ffffff' }).setOrigin(0.5, 0);
-    this.ui.arsenalHint = this.add.text(500, 60, '', { fontFamily: 'sans-serif', fontSize: '14px', color: '#dddddd' }).setOrigin(0.5, 0);
-    this.ui.scoreText = this.add.text(500, 90, '', { fontFamily: 'monospace', fontSize: '16px', color: '#ffe082' }).setOrigin(0.5, 0);
+
+    this.ui.infoText = this.add.text(500, 20, 'Duelo de ingenio', { fontFamily: 'sans-serif', fontSize: '20px', color: '#ffffff',
+  backgroundColor: '#000000', // ← fondo negro sólido
+  padding: { x: 6, y: 3 }  }).setOrigin(0.5, 0);   // ← opcional: margen interno }).setOrigin(0.5, 0);
+    this.ui.arsenalHint = this.add.text(500, 60, '', { fontFamily: 'sans-serif', fontSize: '14px', color: '#dddddd',
+  backgroundColor: '#000000', // ← fondo negro sólido
+  padding: { x: 6, y: 3 }    }).setOrigin(0.5, 0); // ← opcional: margen interno }).setOrigin(0.5, 0);
+    this.ui.scoreText = this.add.text(500, 90, '', { fontFamily: 'monospace', fontSize: '16px', color: '#ffe082',
+  backgroundColor: '#000000', // ← fondo negro sólido
+  padding: { x: 6, y: 3 }    }).setOrigin(0.5, 0);
     this.ui.choiceContainer = this.add.container(0, 0);
 
     // Cargar líneas
@@ -107,12 +119,15 @@ this._navButtons = { prev: null, next: null }; // refs a botones de navegación
   const line = this.currentLine = Phaser.Utils.Array.GetRandom(candidates);
 
   this.setBubbleText(this.ui.npcBubble, line.insulto);
-  this.setBubbleText(this.ui.playerBubble, '...');
-
+ /* switch (this.npcId) {
+    case 1: this.setBubbleText(this.ui.npcBubble,  "Parar a un mentor gruñón puede ser perjudicial para la salud.");
+    case 2: this.setBubbleText(this.ui.npcBubble,  "Testearé tu tolerancia al dolor con implacable indiferencia.");
+    case 3: this.setBubbleText(this.ui.npcBubble,  "Hay un backlog esperándome, ¿Qué quieres?");}
+*/
   // Guardar el insulto (ID) en el arsenal del jugador
   this.addInsultToArsenal(line.insulto);
 
-  
+  this.setBubbleText(this.ui.playerBubble, '');
   const options = this.buildOptionsWithCorrect(line.respuestaCorrecta);
 
   this.showChoices(options, (chosen) => {
@@ -146,10 +161,14 @@ this._navButtons = { prev: null, next: null }; // refs a botones de navegación
     }
 
     const insultOptions = this.buildInsultOptionsFromArsenal(arsenal);
-    this.setBubbleText(this.ui.npcBubble, '...');
-    this.setBubbleText(this.ui.playerBubble, 'Elige tu golpe maestro:');
+    /* switch (this.npcId) {
+    case 1: this.setBubbleText(this.ui.npcBubble,  "Parar a un mentor gruñón puede ser perjudicial para la salud.");
+    case 2: this.setBubbleText(this.ui.npcBubble,  "Testearé tu tolerancia al dolor con implacable indiferencia.");
+    case 3: this.setBubbleText(this.ui.npcBubble,  "Hay un backlog esperándome, ¿Qué quieres?");}
+    this.setBubbleText(this.ui.playerBubble, 'Soy ERNIman! preparate para morir!');*/
 
     this.showChoices(insultOptions, (playerInsult) => {
+		this.setBubbleText(this.ui.npcBubble, '');
       const line = this.lines.find(l => l.insulto === playerInsult);
       if (!line) { this.setBubbleText(this.ui.npcBubble, '(El NPC te mira confuso)'); this.time.delayedCall(1000, () => this.startNpcTurn()); return; }
 
@@ -162,6 +181,8 @@ this._navButtons = { prev: null, next: null }; // refs a botones de navegación
         this.time.delayedCall(1500, () => {
           this.setBubbleText(this.ui.npcBubble, line.respuestaCorrecta);
           this.addResponseToArsenal(line.respuestaCorrecta);
+		  this.playerLives -= 1;
+		  this.updateScoreUI();
           this.time.delayedCall(1500, () => this.startNpcTurn());
         });
       } else {
@@ -169,6 +190,8 @@ this._navButtons = { prev: null, next: null }; // refs a botones de navegación
         const alt = this.getRandomKnownResponse(line.respuestaCorrecta) || this.getGenericFallbackResponse();
         this.time.delayedCall(1500, () => {
           this.setBubbleText(this.ui.npcBubble, alt);
+		  this.playerScore += 1;
+		  this.updateScoreUI();
           // No se desbloquea respuesta
           this.time.delayedCall(1500, () => this.startPlayerTurn());
         });
@@ -181,7 +204,8 @@ this._navButtons = { prev: null, next: null }; // refs a botones de navegación
     // Número aleatorio entre 3 y 6 (ajusta si quieres otro mínimo)
 
 	
-    const count = Phaser.Math.Between(3, Math.min(6, this.lines.length));
+    const count = Phaser.Math.Between(3, Math.min(6, this.lines.length))* this.npcId;
+	
     const shuffled = this.lines.slice();
     Phaser.Utils.Array.Shuffle(shuffled);
     const subset = shuffled.slice(0, count);
