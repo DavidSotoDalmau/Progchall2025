@@ -31,7 +31,7 @@ export default class OfficeMapClickScene extends Phaser.Scene {
     this.lastArrivedSpotId = null;
 
     // NPCs
-    this.maxNPCs = 3; this.npcs = []; this.npcSpeed = 90; this.npcRespawnIntervalMs = 3000; this.encounterRadius = 28;
+    this.maxNPCs = 0; this.npcs = []; this.npcSpeed = 90; this.npcRespawnIntervalMs = 3000; this.encounterRadius = 28;
 
     // Debug / Editor
     this.debugEnabled = false; // D
@@ -49,14 +49,82 @@ export default class OfficeMapClickScene extends Phaser.Scene {
   init(data) { if (data?.startSpotId) this.startSpotId = data.startSpotId; }
 
   preload() {
-    this.load.image('ofimapped', '../../assets/Ofimapped.png');
+    this.load.image('ofimapped', '../chaptertwo/assets/Ofimapped.png');
     this.load.image('player', '../../assets/personaje.png');
     this.load.image('npc', '../../assets/npc.png');
     this.load.json('walkgraph', '../../assets/walkgraph.json');
   }
 
   create() {
-    this.add.image(0, 0, 'ofimapped').setOrigin(0, 0);
+	  this.mapBg = this.add.image(0, 0, 'ofimapped').setOrigin(0, 0);
+    const uploadMapBtn = this.add.text(20, 48, 'Cambiar MAPA', {
+  fontFamily: 'sans-serif',
+  fontSize: '14px',
+  color: '#ffffff',
+  backgroundColor: '#000000',
+  padding: { x: 8, y: 4 }
+})
+.setOrigin(0, 0)
+.setInteractive({ useHandCursor: true })
+.setScrollFactor(0);
+
+uploadMapBtn.on('pointerdown', () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/png,image/jpeg,image/webp';
+  input.onchange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const fr = new FileReader();
+
+    fr.onload = () => {
+      // Usa una key temporal para evitar carreras
+      const TMP_KEY = 'ofimapped_tmp_' + Date.now();
+
+      // Espera al evento 'addtexture' antes de setTexture
+      const onAdd = (key, texture) => {
+        if (key !== TMP_KEY) return;
+
+        // Cambia la textura del fondo
+        this.mapBg.setTexture(TMP_KEY);
+
+        // Ajusta tamaño / bounds si quieres
+        const src = texture.getSourceImage();
+        /*if (src?.width && src?.height) {
+          // Mantén tamaño nativo del mapa nuevo:
+          this.mapBg.setDisplaySize(src.width, src.height);
+
+          if (this.cameras?.main) {
+            this.cameras.main.setBounds(0, 0, src.width, src.height);
+          }
+        }*/
+
+        // Si quieres reemplazar la key original para otros usos, puedes:
+        // 1) this.textures.remove('ofimapped');
+        // 2) this.textures.rename(TMP_KEY, 'ofimapped'); // requiere Phaser >= 3.80
+        // Si tu versión no tiene rename, deja la temporal y usa this.mapBg.texture.key
+
+        // Asegura que el fondo queda detrás
+        this.mapBg.setDepth(-1000);
+
+        // Redibuja overlay si usas debug
+        if (this.debugEnabled) this.drawDebug();
+
+        // Limpia el listener
+        this.textures.off(Phaser.Textures.Events.ADD, onAdd);
+      };
+
+      this.textures.on(Phaser.Textures.Events.ADD, onAdd);
+
+      // Añade la textura base64 (asíncrono → disparará ADD)
+      this.textures.addBase64(TMP_KEY, fr.result);
+    };
+
+    fr.readAsDataURL(file);
+  };
+
+  input.click();
+});
 
     const j = this.cache.json.get('walkgraph');
     if (j && Array.isArray(j.nodes) && j.edges) { this.nodes = j.nodes; this.edges = j.edges; }
@@ -83,18 +151,110 @@ export default class OfficeMapClickScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-X', () => this.handleDeleteSelected());
     this.input.keyboard.on('keydown-DELETE', () => this.handleDeleteSelected());
     this.input.keyboard.on('keydown-O', () => this.handleToggleSpot());
-
+this.input.keyboard.on('keydown-M', () => this.openNodeMetaEditor());
     // Debug layer + Help
     this.debugLayer = this.add.graphics();
-    this.helpText = this.add.text(12, 12, '', { fontFamily: 'monospace', fontSize: '12px', color: '#ffffff' }).setScrollFactor(0);
+    this.helpText = this.add.text(12, 12, '', { fontFamily: 'monospace', fontSize: '24px', color: '#ff00ff' }).setScrollFactor(0);
     this.updateHelp();
     this.drawDebug();
 
     // NPCs
-    for (let i = 0; i < this.maxNPCs; i++) this.spawnNPC();
+    //for (let i = 0; i < this.maxNPCs; i++) this.spawnNPC();
     this.time.addEvent({ delay: this.npcRespawnIntervalMs, loop: true, callback: () => this.maintainNPCs() });
   }
+openNodeMetaEditor() {
+  // Usa el nodo seleccionado; si no hay, intenta coger uno bajo el cursor
+  let node = this.selectedNode;
+  if (!node) {
+    const p = this.input.activePointer;
+    node = this.pickNodeNear(p.x, p.y, 14);
+    if (!node) return;
+    this.selectedNode = node;
+  }
 
+  // Plantilla JSON editable
+  const payload = {
+    id: node.id,
+    label: node.label || "",
+    spot: !!node.spot,
+    targetScene: node.targetScene || ""
+  };
+
+  const msg = [
+    "Edita el nodo en formato JSON:",
+    "(id, label, spot, targetScene)",
+    "Ejemplo: {\"id\":\"printer\",\"label\":\"Impresora\",\"spot\":true,\"targetScene\":\"PrinterScene\"}"
+  ].join("\n");
+
+  const input = window.prompt(msg, JSON.stringify(payload, null, 2));
+  if (!input) return;
+
+  try {
+    const data = JSON.parse(input);
+    this.applyNodeMetaPatch(node, data);
+    this.rebuildSpotsSet();
+    this.drawDebug();
+  } catch (e) {
+    console.warn("JSON inválido en editor de nodo:", e);
+  }
+}
+
+applyNodeMetaPatch(node, data) {
+  // Renombrar id si cambia
+  if (data.id && data.id !== node.id) {
+    this.renameNodeId(node.id, data.id);
+    node = this.nodeById(data.id); // refresca la referencia
+    this.selectedNode = node;
+  }
+
+  // Otros campos
+  if ("label" in data) node.label = data.label || "";
+  if ("spot" in data) node.spot = !!data.spot;
+  if ("targetScene" in data) {
+    node.targetScene = data.targetScene || undefined;
+  }
+}
+
+renameNodeId(oldId, newId) {
+  if (oldId === newId) return;
+  if (this.nodeById(newId)) {
+    console.warn("renameNodeId: ya existe un nodo con id", newId);
+    return;
+  }
+
+  // 1) Renombra en this.nodes
+  const n = this.nodeById(oldId);
+  if (!n) return;
+  n.id = newId;
+
+  // 2) Renombra clave de edges[oldId] -> edges[newId]
+  if (!this.edges[newId] && this.edges[oldId]) {
+    this.edges[newId] = this.edges[oldId];
+  }
+  delete this.edges[oldId];
+
+  // 3) Sustituye oldId por newId en todas las listas de adyacencia
+  for (const k in this.edges) {
+    this.edges[k] = (this.edges[k] || []).map(x => (x === oldId ? newId : x));
+  }
+
+  // 4) Ajusta spots / start / paths
+  if (this.spots.has(oldId)) {
+    this.spots.delete(oldId);
+    this.spots.add(newId);
+  }
+  if (this.startSpotId === oldId) this.startSpotId = newId;
+
+  // 5) Si el jugador/NPCs estaban apuntando a ese id, mejor limpiar rutas
+  if (this.currentTarget && this.currentTarget.id === oldId) this.currentTarget = null;
+  if (Array.isArray(this.currentPath)) {
+    this.currentPath = this.currentPath.map(n => (n.id === oldId ? this.nodeById(newId) : n));
+  }
+  for (const npc of this.npcs) {
+    if (npc.currentNodeId === oldId) npc.currentNodeId = newId;
+    if (npc.targetNodeId === oldId) npc.targetNodeId = newId;
+  }
+}
   update(_t, dt) { this.updatePlayer(dt); this.updateNPCs(dt); this.checkEncounters(); }
 
   // ---------------- Player ----------------
@@ -104,11 +264,13 @@ export default class OfficeMapClickScene extends Phaser.Scene {
     const arrived = this.stepTo(this.player, this.currentTarget, this.playerSpeed, delta);
     if (arrived) { this.lastArrivedSpotId = this.spots.has(this.currentTarget.id) ? this.currentTarget.id : null; this.currentTarget = null; }
   }
+// Botón de cambio de avatar dentro de create()
 
   // ---------------- NPCs ----------------
  // --- NPCs: recorridos largos hasta llegar a un SPOT (no se disuelven antes) ---
 
 spawnNPC(fromNodeId = null) {
+	
   if (this.npcs.length >= this.maxNPCs) return null;
 
   const startNodeId = this.getRandomNonSpotNodeId(fromNodeId);
@@ -265,15 +427,51 @@ despawnNPC(npc) {
   rebuildSpotsSet(){ this.spots = new Set(this.nodes.filter(n=>n.spot).map(n=>n.id)); }
 
   // ---------------- Debug / Editor ----------------
-  drawDebug(){ this.debugLayer.clear(); if(!this.debugEnabled) return; // edges
-    this.debugLayer.lineStyle(2, 0xff4444, 0.9);
-    for(const a in this.edges){ const A=this.nodeById(a); if(!A) continue; for(const b of this.edges[a]){ const B=this.nodeById(b); if(!B) continue; this.debugLayer.strokeLineShape(new Phaser.Geom.Line(A.x,A.y,B.x,B.y)); } }
-    // nodes
-    for(const n of this.nodes){ const color = n===this.selectedNode?0x00e5ff:(n.spot?0x33ff66:0xffffff); this.debugLayer.fillStyle(color, 1); this.debugLayer.fillCircle(n.x,n.y,6); this.debugLayer.lineStyle(1,0x000000,1); this.debugLayer.strokeCircle(n.x,n.y,6); this.debugLayer.fillStyle(0xffffff,1); this.debugLayer.fillRect(n.x+8,n.y-6,2,12); this.debugLayer.lineStyle(1,0xffffff,0.5); this.debugLayer.strokeRect(n.x+12,n.y-8,80,16); this.debugLayer.fillStyle(0x111111,0.8); this.debugLayer.fillRect(n.x+12,n.y-8,80,16); this.addTempText(n.id, n.x+14, n.y-8); }
+ drawDebug() {
+  this.debugLayer.clear();
+  if (!this.debugEnabled) return;
+
+  // --- edges ---
+  this.debugLayer.lineStyle(2, 0xff4444, 0.9);
+  for (const a in this.edges) {
+    const A = this.nodeById(a); if (!A) continue;
+    for (const b of this.edges[a]) {
+      const B = this.nodeById(b); if (!B) continue;
+      this.debugLayer.strokeLineShape(new Phaser.Geom.Line(A.x, A.y, B.x, B.y));
+    }
   }
 
-  addTempText(text, x, y){ const t=this.add.text(x,y,text,{fontFamily:'monospace',fontSize:'10px',color:'#fff'}).setDepth(1); this.time.delayedCall(1,()=>t.destroy()); }
+  // --- nodes + labels (sin cajas) ---
+  for (const n of this.nodes) {
+    const color = n === this.selectedNode ? 0x00e5ff : (n.spot ? 0x33ff66 : 0xffffff);
+    this.debugLayer.fillStyle(color, 1);
+    this.debugLayer.fillCircle(n.x, n.y, 6);
+    this.debugLayer.lineStyle(1, 0x000000, 1);
+    this.debugLayer.strokeCircle(n.x, n.y, 6);
 
+    // ← SOLO texto en amarillo, sin rectángulos
+    this.addTempText(n.id, n.x + 10, n.y - 10);
+  }
+}
+
+// Reemplaza addTempText() por esto (texto sin fondo, con contorno para legibilidad)
+addTempText(text, x, y) {
+  const t = this.add.text(x, y, text, {
+    fontFamily: 'monospace',
+    fontSize: '10px',
+    color: '#ffff00',           // amarillo
+    // sin backgroundColor ⇒ fondo transparente
+  })
+  .setDepth(1000);
+
+  // contorno suave para que se lea sobre mapas claros
+  t.setStroke('#000000', 2);   // borde negro finito
+  // o, si prefieres sombra:
+  // t.setShadow(0, 0, '#000000', 4, false, true);
+
+  // destruir en el próximo tick para no acumular textos
+  this.time.delayedCall(1, () => t.destroy());
+}
   updateHelp(){ const vis = (this.debugEnabled? 'DEBUG ON':'DEBUG OFF')+ ' | ' + (this.editEnabled? 'EDIT ON':'EDIT OFF'); this.helpText.setText(`${vis}
 D: Debug  E: Edit  S: Export  R: Reload JSON  C: Connect/Disconnect  X/DEL: Delete  O: Toggle Spot`); }
 
@@ -313,8 +511,20 @@ D: Debug  E: Edit  S: Export  R: Reload JSON  C: Connect/Disconnect  X/DEL: Dele
 
   reloadGraphJSON(){ this.load.json('walkgraph', 'assets/walkgraph.json'); this.load.once(Phaser.Loader.Events.COMPLETE, ()=>{ const j=this.cache.json.get('walkgraph'); if(j&&Array.isArray(j.nodes)&&j.edges){ this.nodes=j.nodes; this.edges=j.edges; this.rebuildSpotsSet(); this.drawDebug(); } }); this.load.start(); }
 
-  dumpGraphToConsole(){ const payload={ nodes:this.nodes.map(n=>({ id:n.id, x:Math.round(n.x), y:Math.round(n.y), spot:!!n.spot, targetScene:n.targetScene })), edges:this.edges }; console.log('WALKGRAPH_EXPORT', JSON.stringify(payload, null, 2)); }
-
+  dumpGraphToConsole() {
+  const payload = {
+    nodes: this.nodes.map(n => ({
+      id: n.id,
+      x: Math.round(n.x),
+      y: Math.round(n.y),
+      spot: !!n.spot,
+      targetScene: n.targetScene,
+      label: n.label || ""
+    })),
+    edges: this.edges
+  };
+  console.log('WALKGRAPH_EXPORT', JSON.stringify(payload, null, 2));
+}
   generateNodeId(){ let i=1; while(this.nodeById('n'+i)) i++; return 'n'+i; }
 
   // Fallback inicial simple

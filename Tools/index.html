@@ -11,5 +11,21 @@
 </head>
 <body>
   <script type="module" src="./main.js"></script>
+  <input id="mapFile" type="file" accept="image/png,image/jpeg" style="position:fixed;left:12px;top:12px;z-index:9999">
+<script type="module">
+  import { gameState } from './core/state.js';
+  const el = document.getElementById('mapFile');
+  el.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      gameState.setProtagonist(fr.result);                 // guarda en memoria
+      localStorage.setItem('protagonistB64', fr.result);   // (opcional) persistir
+      alert('Avatar cargado ✅ — vuelve a la escena para ver el cambio.');
+    };
+    fr.readAsDataURL(file);
+  });
+</script>
 </body>
 </html>
