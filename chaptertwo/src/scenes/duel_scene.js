@@ -63,12 +63,12 @@ this._navButtons = { prev: null, next: null }; // refs a botones de navegación
 	 this.playerLives = 3;
 	  this.playerScore = 0;
     this.add.image(0, 0, 'duel_bg').setOrigin(0, 0).setAlpha(0.9);
-    this.add.image(260, 220, 'npc').setScale(1.1);
-    this.add.image(740, 220, 'player').setScale(1.1).setFlipX(true);
+    this.add.image(490, 220, 'player').setScale(1.1).setFlipX(true);;
+    this.add.image(680, 220, 'npc').setScale(1.1).setTint(this.colorForNpcId(this.npcId));
 
     // Burbujas
-    this.ui.npcBubble = this.createSpeechBubble(140, 300, 340, 120);
-    this.ui.playerBubble = this.createSpeechBubble(520, 300, 340, 120);
+    this.ui.playerBubble = this.createSpeechBubble(240, 300, 340, 120);
+    this.ui.npcBubble = this.createSpeechBubble(620, 300, 340, 120);
 	switch (this.npcId) {
     case 1: this.setBubbleText(this.ui.npcBubble,  "Parar a un mentor gruñón puede ser perjudicial para la salud."); break;
     case 2: this.setBubbleText(this.ui.npcBubble,  "Testearé tu tolerancia al dolor con implacable indiferencia."); break;
@@ -76,13 +76,13 @@ this._navButtons = { prev: null, next: null }; // refs a botones de navegación
  this.setBubbleText(this.ui.playerBubble, 'Soy ERNIman! preparate para morir!');
 
 
-    this.ui.infoText = this.add.text(500, 20, 'Duelo de ingenio', { fontFamily: 'sans-serif', fontSize: '20px', color: '#ffffff',
+    this.ui.infoText = this.add.text(600, 20, 'Duelo de ingenio', { fontFamily: 'sans-serif', fontSize: '20px', color: '#ffffff',
   backgroundColor: '#000000', // ← fondo negro sólido
   padding: { x: 6, y: 3 }  }).setOrigin(0.5, 0);   // ← opcional: margen interno }).setOrigin(0.5, 0);
-    this.ui.arsenalHint = this.add.text(500, 60, '', { fontFamily: 'sans-serif', fontSize: '14px', color: '#dddddd',
+    this.ui.arsenalHint = this.add.text(600, 60, '', { fontFamily: 'sans-serif', fontSize: '14px', color: '#dddddd',
   backgroundColor: '#000000', // ← fondo negro sólido
   padding: { x: 6, y: 3 }    }).setOrigin(0.5, 0); // ← opcional: margen interno }).setOrigin(0.5, 0);
-    this.ui.scoreText = this.add.text(500, 90, '', { fontFamily: 'monospace', fontSize: '16px', color: '#ffe082',
+    this.ui.scoreText = this.add.text(600, 90, '', { fontFamily: 'monospace', fontSize: '16px', color: '#ffe082',
   backgroundColor: '#000000', // ← fondo negro sólido
   padding: { x: 6, y: 3 }    }).setOrigin(0.5, 0);
     this.ui.choiceContainer = this.add.container(0, 0);
@@ -99,7 +99,14 @@ this._navButtons = { prev: null, next: null }; // refs a botones de navegación
     this.updateScoreUI();
     this.startPlayerTurn();
   }
-
+colorForNpcId(id) {
+  switch (id) {
+    case 1: return 0xff5555; // rojo
+    case 2: return 0x55aaff; // azul
+    case 3: return 0x55ff88; // verde
+    default: return 0xffffff; // blanco fallback
+  }
+}
   // ---------------- Turnos ----------------
   startNpcTurn() {
   this.turn = 'NPC';
@@ -207,7 +214,7 @@ this._navButtons = { prev: null, next: null }; // refs a botones de navegación
     const count = Phaser.Math.Between(3, Math.min(6, this.lines.length))* this.npcId;
 	
     const shuffled = this.lines.slice();
-    Phaser.Utils.Array.Shuffle(shuffled);
+    //Phaser.Utils.Array.Shuffle(shuffled);
     const subset = shuffled.slice(0, count);
 
     this.npcKnowledge.ids = new Set(subset.map(l => l.id));
@@ -269,7 +276,7 @@ showArsenalHint() {
   // ---------------- UI helpers ----------------
   createSpeechBubble(x, y, w, h) {
     const g = this.add.graphics();
-    g.fillStyle(0x000000, 0.55);
+    g.fillStyle(0x000000, 1);
     g.fillRoundedRect(x, y, w, h, 12);
     const text = this.add.text(x + 10, y + 10, '', { fontFamily: 'serif', fontSize: '16px', wordWrap: { width: w - 20 } });
     return { box: g, text };
@@ -295,7 +302,7 @@ renderOptionsPage() {
   const endIndex = Math.min(startIndex + this.pageSize, total);
   const visible = this._allOptions.slice(startIndex, endIndex);
 
-  const centerX = 500;
+  const centerX = 600;
   const startY  = 480;
   const spacing = 32;
 
@@ -305,14 +312,14 @@ renderOptionsPage() {
       fontFamily: 'sans-serif',
       fontSize: '16px',
       color: '#ffffff',
-      backgroundColor: 'rgba(0,0,0,0.35)'
+      backgroundColor: 'rgba(0,0,0,1)'
     })
     .setOrigin(0.5, 0.5)
     .setPadding(8, 4, 8, 4)
     .setInteractive({ useHandCursor: true });
 
-    txt.on('pointerover', () => txt.setStyle({ backgroundColor: 'rgba(255,255,255,0.15)' }));
-    txt.on('pointerout',  () => txt.setStyle({ backgroundColor: 'rgba(0,0,0,0.35)' }));
+    txt.on('pointerover', () => txt.setStyle({ backgroundColor: 'rgba(255,255,255,0)' }));
+    txt.on('pointerout',  () => txt.setStyle({ backgroundColor: 'rgba(0,0,0,1)' }));
     txt.on('pointerdown', () => {
       if (typeof this._onChoose === 'function') {
         this._onChoose(label);
@@ -434,7 +441,7 @@ clearChoices() {
     }
   }
 
-  Phaser.Utils.Array.Shuffle(options);
+  //Phaser.Utils.Array.Shuffle(options);
   return options;
   }
 
@@ -451,7 +458,7 @@ clearChoices() {
 
   pickDecoyResponses(n, exclude) {
     const all = this.lines.map(l => l.respuestaCorrecta).filter(r => r !== exclude);
-    Phaser.Utils.Array.Shuffle(all);
+    //Phaser.Utils.Array.Shuffle(all);
     return all.slice(0, n);
   }
 
