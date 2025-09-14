@@ -6,42 +6,56 @@ import {
     gameState
 }
 from "../core/state.js";
-export default class HRPide extends Phaser.Scene {
+export default class alfredo extends Phaser.Scene {
     constructor() {
-        super('HRPide');
+        super('alfredo');
     }
 
     preload() {
-        this.load.image('hr', 'assets/hroffice.png');
-        this.load.image('npcsonia', 'assets/SoniaJuarez.png');
+        this.load.image('sitioalfredo', 'assets/alfredoofi.png');
+
+        this.load.image('npcalfredo', 'assets/alfredo.png');
+        this.load.image('npcalfredofull', 'assets/alfredofull.png');
     }
 
     create() {
         if (!this.sceneInteractives) {
             this.sceneInteractives = [this.player, this.item, this.pressureZone];
         }
+        this.alfredo = this.add.sprite(1330, 580, 'npcalfredofull')
+            .setOrigin(1, 1) // esquina inferior derecha
+            .setScale(0.4)
+            .setDepth(1)
+            .setInteractive({
+                useHandCursor: true
+            });
+        this.sceneInteractives = this.sceneInteractives || [];
+        if (!this.sceneInteractives.includes(this.alfredo)) {
+            this.sceneInteractives.push(this.alfredo);
+        }
+        this.alfredo.on('pointerdown', () => {
+            this.startDialogueWithAlfredo();
+        });
+        const usableHeight = this.scale.height - 80;
+        this.usableHeight = usableHeight; // ← IMPORTANTE
         addHelpButton(this);
 
+        this.input.enabled = true;
         console.log(this.scene.manager.keys);
         this.gs = this.registry.get('gameState') || gameState;
         this.accessCardAttempts = 0;
         this.gs.setFlag('entered', true);
         this.dialogueUsedOptions = {};
-        const usableHeight = this.scale.height - 80; // 20px arriba y 20px abajo
+
         this.pressureZonetimbre = this.add.zone(965, 320, 10, 10)
             .setOrigin(0.5)
             .setInteractive({
                 useHandCursor: true
             })
             .setRectangleDropZone(80, 150);
-        const sprite = this.add.sprite(740, 700, 'npcsonia').setOrigin(0.5, 1).setScale(0.5)
-            .setDepth(1);
-        const monologoHR = "¡Hola! Yo soy Sonia de HR.\nNecesito que me mandes las evidencias del IDI para ayer, y necesito también que cierres el último mes del SAP para poder controlar el flexitime, ¿Podrías, por favor, hacerlo antes de irte hoy?";
-
-        this.input.enabled = false; // bloquea clicks mientras habla
 
         // Si ya creaste dialogueBox arriba, lo reutilizamos:
-     
+
         // Oculta el botón de volver hasta que acabe el speech
         // (lo creamos después, pero dejamos la variable preparada)
         let backButton;
@@ -55,39 +69,29 @@ export default class HRPide extends Phaser.Scene {
             .setInteractive({
                 useHandCursor: true
             })
-            .setVisible(false) // oculto hasta fin del monólogo
-            .setActive(false)
+            .setVisible(true) // oculto hasta fin del monólogo
+            .setActive(true)
             .setDepth(2);
 
         backButton.on('pointerdown', () => {
             this.gs.setPhase(1);
             this.scene.start('OfficeMapClickScene', {
-                startSpotId: "n26",
+                startSpotId: "n42",
                 resumeFrom: this.resumeFrom
             });
         });
 
         // Lanza el efecto máquina de escribir y al terminar habilita el botón y el input
-       
 
-        this.pressureZonetimbre.on('pointerdown', () => {
-            this.showDialogue('Parece que el timbre no funciona. Prueba con la tarjeta.');
-        });
 
-        const bg = this.add.image(0, 40, 'hr').setOrigin(0, 0);
+        this.bg = this.add.image(0, 40, 'sitioalfredo').setOrigin(0, 0);
+        this.fitBackground(this.bg);
+        const bands = this.add.graphics().setDepth(1);
+        bands.fillStyle(0x000000, 1);
+        bands.fillRect(0, 0, this.scale.width, 80);
+        bands.fillRect(0, this.scale.height - 80, this.scale.width, 80);
 
-        // Escala la imagen proporcionalmente al nuevo alto (sin deformarla)
-        const scaleX = this.scale.width / bg.width;
-        const scaleY = usableHeight / bg.height;
-        const scale = Math.max(scaleX, scaleY);
-
-        bg.setScale(scale);
-        bg.y -= 140
-        const g = this.add.graphics();
-        g.fillStyle(0x000000, 1);
-        g.fillRect(0, 0, this.scale.width, 80);
-        g.fillRect(0, this.scale.height - 80, this.scale.width, 80);
-
+        // caja de diálogo con depth > bandas
         this.dialogueBox = this.add.text(20, 140, '', {
             font: '18px monospace',
             fill: '#ffffff',
@@ -99,21 +103,11 @@ export default class HRPide extends Phaser.Scene {
             wordWrap: {
                 width: 620
             }
-        }).setDepth(1).setScrollFactor(0);
- this.typeText(this.dialogueBox, monologoHR, 22, () => {
-            this.input.enabled = true;
-            backButton.setVisible(true).setActive(true);
-        });
-           this.dialogueBox.setText('');
+        }).setDepth(2).setScrollFactor(0);
+
+        this.dialogueBox.setText('');
         this.inventoryGroup = this.add.group();
         this.updateInventoryDisplay();
-        backButton.on('pointerdown', () => {
-            this.gs.setPhase(1);
-            this.scene.start('OfficeMapClickScene', {
-                startSpotId: "n26",
-                resumeFrom: this.resumeFrom
-            }); // ⚡ cambia a la escena que corresponda
-        });
 
     }
     typeText(targetTextObj, fullText, cps = 20, onComplete) {
@@ -128,21 +122,40 @@ export default class HRPide extends Phaser.Scene {
                 i++;
                 this.time.delayedCall(delay, tick);
             } else if (typeof onComplete === 'function') {
+
                 onComplete();
             }
         };
         tick();
     }
+    fitBackground(img) {
+        const scaleX = this.scale.width / img.width;
+        const scaleY = this.usableHeight / img.height;
+        const scale = Math.max(scaleX, scaleY);
+        img.setScale(scale);
+        img.y = 40 - 140; // respeta tu offset vertical actual
+        img.setDepth(0); // detrás de todo
+    }
+
+    setBackground(key) {
+        if (this.bg && this.textures.exists(key)) {
+            this.bg.setTexture(key);
+            this.fitBackground(this.bg);
+        } else {
+            this.bg = this.add.image(0, 40, key).setOrigin(0, 0);
+            this.fitBackground(this.bg);
+        }
+    }
     showDialogue(text) {
         this.dialogueBox.setText(text);
     }
     showContextMenu(itemName) {
-        if (itemName == 'teléfono móvil') {
+        if (itemName == 'Ordenador Portatil') {
             this.contextMenuGroup = this.add.group();
 
             const menuX = 1080;
             const menuY = 550;
-            const options = ['Llamar', 'Jugar'];
+            const options = ['Colocar'];
 
             options.forEach((option, index) => {
                 const optionText = this.add.text(menuX, menuY + index * 30, option, {
@@ -167,52 +180,83 @@ export default class HRPide extends Phaser.Scene {
             });
 
         } else {
+            if (itemName == 'teléfono móvil') {
+                this.contextMenuGroup = this.add.group();
 
-            this.contextMenuGroup = this.add.group();
+                const menuX = 1080;
+                const menuY = 550;
+                const options = ['Llamar', 'Jugar'];
 
-            const menuX = 1080;
-            const menuY = 550;
-            const options = ['Examinar', 'Usar'];
+                options.forEach((option, index) => {
+                    const optionText = this.add.text(menuX, menuY + index * 30, option, {
+                        font: '16px monospace',
+                        fill: '#ffffff',
+                        backgroundColor: '#333333',
+                        padding: {
+                            x: 10,
+                            y: 5
+                        }
+                    }).setInteractive({
+                        useHandCursor: true
+                    });
 
-            options.forEach((option, index) => {
-                const optionText = this.add.text(menuX, menuY + index * 30, option, {
-                    font: '16px monospace',
-                    fill: '#ffffff',
-                    backgroundColor: '#333333',
-                    padding: {
-                        x: 10,
-                        y: 5
-                    }
-                }).setInteractive({
-                    useHandCursor: true
+                    optionText.on('pointerdown', () => {
+                        this.handleInventoryAction(option, this.selectedInventoryItem);
+                        this.contextMenuGroup.clear(true, true);
+                        event && event.stopPropagation();
+                    });
+
+                    this.contextMenuGroup.add(optionText);
                 });
 
-                optionText.on('pointerdown', () => {
-                    this.handleInventoryAction(option, this.selectedInventoryItem);
+            } else {
+
+                this.contextMenuGroup = this.add.group();
+
+                const menuX = 1080;
+                const menuY = 550;
+                const options = ['Examinar', 'Usar'];
+
+                options.forEach((option, index) => {
+                    const optionText = this.add.text(menuX, menuY + index * 30, option, {
+                        font: '16px monospace',
+                        fill: '#ffffff',
+                        backgroundColor: '#333333',
+                        padding: {
+                            x: 10,
+                            y: 5
+                        }
+                    }).setInteractive({
+                        useHandCursor: true
+                    });
+
+                    optionText.on('pointerdown', () => {
+                        this.handleInventoryAction(option, this.selectedInventoryItem);
+                        this.contextMenuGroup.clear(true, true);
+                        event && event.stopPropagation();
+                    });
+
+                    this.contextMenuGroup.add(optionText);
+                });
+
+            }
+            // 🔁 Escucha un clic fuera del menú para cerrarlo
+            this.input.off('pointerdown', this._contextualPointerClose, this);
+
+            this._contextualPointerClose = (pointer, objectsOver) => {
+                const clickedOnOption = objectsOver.some(obj => this.contextMenuGroup.contains(obj));
+                if (!clickedOnOption) {
                     this.contextMenuGroup.clear(true, true);
-                    event && event.stopPropagation();
-                });
+                    this.enableSceneInteractions();
+                    this.input.off('pointerdown', this._contextualPointerClose, this); // limpieza
+                }
+            };
 
-                this.contextMenuGroup.add(optionText);
+            this.time.delayedCall(0, () => {
+                this.input.on('pointerdown', this._contextualPointerClose, this);
             });
 
         }
-        // 🔁 Escucha un clic fuera del menú para cerrarlo
-        this.input.off('pointerdown', this._contextualPointerClose, this);
-
-        this._contextualPointerClose = (pointer, objectsOver) => {
-            const clickedOnOption = objectsOver.some(obj => this.contextMenuGroup.contains(obj));
-            if (!clickedOnOption) {
-                this.contextMenuGroup.clear(true, true);
-                this.enableSceneInteractions();
-                this.input.off('pointerdown', this._contextualPointerClose, this); // limpieza
-            }
-        };
-
-        this.time.delayedCall(0, () => {
-            this.input.on('pointerdown', this._contextualPointerClose, this);
-        });
-
     }
     disableSceneInteractions() {
         if (!this.sceneInteractives)
@@ -231,7 +275,22 @@ export default class HRPide extends Phaser.Scene {
                 useHandCursor: true
             }));
     }
-
+    // Helper reutilizable (ponlo en la clase si no lo tienes ya)
+    typeText(targetTextObj, fullText, cps = 20, onComplete) {
+        const delay = Math.max(5, Math.floor(1000 / cps)); // ms por carácter
+        targetTextObj.setText('');
+        let i = 0;
+        const tick = () => {
+            if (i <= fullText.length) {
+                targetTextObj.setText(fullText.slice(0, i));
+                i++;
+                this.time.delayedCall(delay, tick);
+            } else if (typeof onComplete === 'function') {
+                onComplete();
+            }
+        };
+        tick();
+    }
     handleInventoryAction(action, itemName) {
         switch (action) {
         case 'Examinar':
@@ -264,6 +323,15 @@ export default class HRPide extends Phaser.Scene {
             if (this.gs.getFlag('tarjetaactiva')) {
                 this.gs.setFlag('tiempopasa', true);
             }
+            break;
+        case 'Colocar':
+            this.showDialogue(`Colocas el ${itemName}.`);
+            this.gs.setFlag('computerinplace', true);
+            this.player = this.add.sprite(250, 630, 'portatil').setOrigin(0.5, 1).setScale(0.2)
+                .setDepth(1).setInteractive({
+                    useHandCursor: true
+                });
+            this.setBackground('sitio2');
             break;
         case 'Usar':
             if (itemName === 'objeto misterioso') {
@@ -356,6 +424,104 @@ export default class HRPide extends Phaser.Scene {
             this.inventoryGroup.add(itemText);
         });
     }
+    startDialogueWithAlfredo() {
+        // Limpieza previa
+        if (this.dialogueGroupnpc) {
+            this.dialogueGroupnpc.clear(true, true);
+            this.dialogueGroupnpc.destroy(true);
+        }
+        this.dialogueGroupnpc = this.add.group();
+
+        // Secuencia de líneas (PJ / Alfredo)
+        const seq = [{
+                who: 'PJ',
+                text: "¡Hola! Me han dicho que tengo que hablar con ICT por el teclado y el ratón que faltan."
+            }, {
+                who: 'NPC',
+                text: "Ciao, ciao! Sono Alfredo. Llevo todo lo que tenga que ver con equipos y configurazioni di sistemi. Ahora mismo non tengo ningún ratón ni teclado de sobras, così que tendrás que encontrarlos por ahí, capisci?"
+            }, {
+                who: 'PJ',
+                text: "¡Un placer Alfredo! Soy ERNIman y llevo un mes en la compañía. ¿Sabes quién podría no necesitarlos para que me los preste?"
+            }, {
+                who: 'NPC',
+                text: "Mira, Caro no usa el teclado, e Albert normalmente non usa el ratón porque está con la tablet y usa el pad. Io probaría con ellos, sì sì."
+            }, {
+                who: 'PJ',
+                text: "¡Nada más, grazie!"
+            }
+        ];
+        this.gs.addActiveSpot('n43');
+        this.gs.addActiveSpot('n28');
+        // Flags de misión
+        this.gs.setFlag('quest_inputs_needed', true); // necesitas teclado/ratón
+        this.gs.setFlag('hint_caro_albert', true); // pista de a quién pedírselos
+
+        // Render de la primera línea
+        this._alfSeqIndex = 0;
+        this.renderAlfredoLine(seq);
+    }
+
+    renderAlfredoLine(seq) {
+        if (!Array.isArray(seq) || this._alfSeqIndex >= seq.length) {
+            // Fin del diálogo
+            this.dialogueGroupnpc.clear(true, true);
+            this.dialogueGroupnpc.destroy(true);
+            this.dialogueGroupnpc = null;
+            return;
+        }
+
+        // Limpia lo anterior
+        this.dialogueGroupnpc.clear(true, true);
+
+        const line = seq[this._alfSeqIndex];
+        const isNPC = line.who === 'NPC';
+        const COLORS = {
+            NPC: '#7ad7ff', // azulito para Alfredo
+            PJ: '#ffd54f' // amarillo para el jugador
+        };
+        // Caja de texto
+        const txt = this.add.text(
+                440, 460,
+                (isNPC ? "Alfredo: " : "Tú: ") + line.text, {
+                font: '18px monospace',
+                fill: COLORS[line.who] || '#ffffff',
+                backgroundColor: '#111111',
+                padding: {
+                    x: 8,
+                    y: 6
+                },
+                wordWrap: {
+                    width: 520
+                }
+            }).setDepth(2);
+
+        this.dialogueGroupnpc.add(txt);
+
+        // Botón siguiente
+        const nextBtn = this.add.text(
+                440, 620,
+                this._alfSeqIndex < seq.length - 1 ? '▶' : '< Cerrar >', {
+                font: '16px monospace',
+                fill: '#00ffff',
+                backgroundColor: '#000000',
+                padding: {
+                    x: 10,
+                    y: 6
+                }
+            })
+            .setInteractive({
+                useHandCursor: true
+            })
+            .setDepth(2);
+
+        nextBtn.on('pointerdown', () => {
+            this._alfSeqIndex++;
+            this.renderAlfredoLine(seq);
+        });
+
+        this.dialogueGroupnpc.add(nextBtn);
+    }
+
     startDialogueWithNPC() {
         if (this.npcContainer) {
             this.closeNPC(); // Limpieza previa si quedó algo

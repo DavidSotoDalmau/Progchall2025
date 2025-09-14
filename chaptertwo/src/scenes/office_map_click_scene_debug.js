@@ -13,7 +13,8 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         this.nodes = []; // [{id,x,y,spot?,targetScene?}]
         this.edges = {}; // { id: [id,...] }
         this.spots = new Set();
-
+        this.blockedSpots = new Set(); // ids de spots bloqueados
+        this.spotLayer = null;
         // Player
         this.player = null;
         this.playerSpeed = 120;
@@ -97,7 +98,25 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         }
 
         this.rebuildSpotsSet();
+        this.spotLayer = this.add.graphics().setDepth(998); // por debajo del exclaim (999)
 
+        this.renderSpotStatus = () => {
+            if (!this.spotLayer)
+                return;
+            this.spotLayer.clear();
+            for (const n of this.nodes) {
+                if (!this.isSpot(n))
+                    continue;
+                const active = this.isSpotActive(n.id);
+                const strokeColor = active ? 0x33ff66 : 0xff6666; // verde / rojo
+                const alpha = active ? 0.9 : 0.6;
+                this.spotLayer.lineStyle(3, strokeColor, alpha);
+                //this.spotLayer.strokeCircle(n.x, n.y, 18);
+                // opcional: puntito interior
+                this.spotLayer.fillStyle(strokeColor, active ? 0.35 : 0.2);
+                this.spotLayer.fillCircle(n.x, n.y, 6);
+            }
+        };
         let spawnX,
         spawnY;
         if (this.resumeFrom) {
@@ -115,6 +134,30 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         this.player = this.add.sprite(spawnX, spawnY, 'player').setScale(0.6);
         this.lastArrivedSpotId = null;
         const OBJ_NODE_ID = 'n26';
+        this.blockedSpots = new Set([...this.spots]);
+        switch (this.Phase) {
+        case 0: {
+                // Bloquea todos los spots y habilita solo el objetivo (n26)
+
+                this.gs.addActiveSpot('n26');
+				this.gs.addActiveSpot('n33');
+                break;
+            }
+
+            // Ejemplo: en fase 1 (y siguientes) todo activo
+        case 1:
+        default: {
+
+                this.gs.addActiveSpot('n44');
+                break;
+            }
+        }
+        for (const id of this.gs.activespots) {
+            this.blockedSpots.delete(id);
+			this.gs.addActiveSpot(id);
+        }
+        // Dibuja los aros
+        this.renderSpotStatus();
         if (this.Phase === 0) {
             // Icono en n26
             this.startAutopilotTo('n26', 'HRPide');
@@ -160,6 +203,24 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             this.tooltipText.setVisible(false);
         }
 
+    }
+    isSpot(node) {
+        return !!node && !!node.spot;
+    }
+    isSpotActive(id) {
+        // “Activo” = es spot y NO está en bloqueados
+        const n = this.nodeById(id);
+        return this.isSpot(n) && !this.blockedSpots.has(id);
+    }
+    setSpotBlocked(id, blocked = true) {
+        if (blocked)
+            this.blockedSpots.add(id);
+        else
+            this.blockedSpots.delete(id);
+        this.renderSpotStatus(); // refresca aros
+    }
+    setSpotActive(id, active = true) {
+        this.setSpotBlocked(id, !active);
     }
     goToNode(nodeId) {
         const dest = this.nodeById(nodeId);
@@ -623,7 +684,12 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             const atNode = this.getNearestNode(this.player.x, this.player.y);
             const clickNearThisSpot = atNode && atNode.id === nearest.id && this.spots.has(nearest.id);
             if (clickNearThisSpot && this.lastArrivedSpotId === nearest.id) {
-                this.scene.start(nearest.targetScene || 'OfficeMapClickScene');
+                if (this.isSpotActive(nearest.id)) {
+                    this.scene.start(nearest.targetScene || 'OfficeMapClickScene');
+                } else {
+                    // feedback opcional: pequeño “buzzer”
+                    this.addTempText('Bloqueado', nearest.x + 14, nearest.y - 18);
+                }
                 return;
             }
             const startId = atNode.id;
