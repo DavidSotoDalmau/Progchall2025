@@ -1,6 +1,7 @@
 export class GameState {
     constructor() {
         this.inventory = [];
+		this.Phase=0;
 		this.arsenalInsultos= ['Soy cola, tú pegamento.',
       '¡No hay palabras para describir ese código!',
       'Escribes código como un Project Manager.'];
@@ -45,7 +46,12 @@ export class GameState {
     setFlag(name, value = true) {
         this.flags[name] = value;
     }
-
+	setPhase(name, value = true) {
+        this.Phase = value;
+    }
+	getPhase() {
+        return this.Phase;
+    }
     getFlag(name) {
         return !!this.flags[name];
     }

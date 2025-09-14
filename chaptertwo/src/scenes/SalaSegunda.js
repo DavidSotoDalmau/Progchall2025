@@ -1,7 +1,11 @@
 import {
     addHelpButton
+}from "../ui/HelpButton.js";
+import {
+    gameState
 }
-from "../ui/HelpButton.js";
+from "../core/state.js";
+
 export default class SalaSegunda extends Phaser.Scene {
     constructor() {
         super('SalaSegunda');

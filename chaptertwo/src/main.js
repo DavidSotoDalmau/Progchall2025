@@ -6,6 +6,9 @@ import SalaTercera from "./scenes/SalaTercera.js";
 import SalaCuarta from "./scenes/SalaCuarta.js";
 import MainScene from "./scenes/MainScene.js";
 import StarWarsScene from "./scenes/cap2Text.js";
+import OfficeMapClickScene from "./scenes/office_map_click_scene_debug.js";
+import DuelScene from "./scenes/duel_scene.js";
+import HRPide from "./scenes/HRPide.js";
 import {
     GameState
 }
@@ -19,7 +22,7 @@ const config = {
     width: 1280,
     height: 720,
     parent: "game-container",
-    scene: [LoreScene, HelpScene, Cap1Lore, Cap2Lore, SalaSegunda, MainScene, SalaTercera, SalaCuarta,StarWarsScene],
+    scene: [SalaCuarta,MainScene, SalaTercera,SalaSegunda , StarWarsScene,OfficeMapClickScene, DuelScene,HRPide],
     physics: {
     default:
         "arcade",

@@ -54,63 +54,14 @@ export default class MainScene extends Phaser.Scene {
         g.fillRect(0, 0, this.scale.width, 40);
         g.fillRect(0, this.scale.height - 60, this.scale.width, 60);
         this.inventoryGroup = this.add.group();
-        this.gs.addItem("Carpeta");
+        this.gs.addItem("tarjetas de acceso");
+		this.gs.addItem("teléfono móvil");
         this.updateInventoryDisplay();
         this.player = this.add.sprite(50, 500, 'player').setInteractive({
             useHandCursor: true
         });
 
-        if (this.gs.getFlag('entered') && !this.gs.getFlag('tarjetarecogida')) {
-
-            const mensaje = 'Parece que algo se te ha caído de la carpeta. ¿Qué será?';
-            this.dialogueBox = this.add.text(20, 240, '', {
-                font: '18px monospace',
-                fill: '#ffffff',
-                backgroundColor: '#000000',
-                padding: {
-                    x: 10,
-                    y: 5
-                },
-                wordWrap: {
-                    width: 760
-                }
-            }).setDepth(1).setScrollFactor(0);
-            const text = this.add.text(80, 280, mensaje, {
-                font: '20px monospace',
-                fill: '#ffffff',
-                wordWrap: {
-                    width: 640
-                }, // Opcional: envoltorio de línea
-                padding: {
-                    x: 10,
-                    y: 10
-                }
-            });
-
-            // Fondo del texto (con margen)
-            const bgt = this.add.graphics();
-            bgt.fillStyle(0x000000, 1);
-            bgt.fillRect(
-                text.x - 10,
-                text.y - 10,
-                text.width + 20,
-                text.height + 20);
-
-            // Asegurar que el texto esté por encima del fondo
-            text.setDepth(1);
-
-            // Agrupar para ocultar fácilmente luego
-            const group = this.add.group([bgt, text]);
-
-            // Temporizador para eliminarlo después de 5 segundos
-            this.time.delayedCall(1000, () => {
-                group.clear(true, true); // Elimina ambos
-            });
-            this.item = this.add.sprite(170, 620, 'item').setInteractive({
-                useHandCursor: true
-            });
-        }
-
+      
         this.dialogueBox = this.add.text(20, 340, '', {
             font: '18px monospace',
             fill: '#ffffff',

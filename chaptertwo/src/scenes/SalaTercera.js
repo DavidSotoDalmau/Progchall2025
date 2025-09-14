@@ -2,6 +2,10 @@ import {
     addHelpButton
 }
 from "../ui/HelpButton.js";
+import {
+    gameState
+}
+from "../core/state.js";
 export default class SalaTercera extends Phaser.Scene {
     constructor() {
         super('SalaTercera');
@@ -224,53 +228,6 @@ export default class SalaTercera extends Phaser.Scene {
                 this.showDialogue('Intentas usar la llave, pero aquí no hay cerraduras.');
             } else if (itemName === 'tarjetas de acceso') {
 
-                if (!this.gs.getFlag('tarjetaactiva')) {
-                    this.showDialogue('Usas las tarjetas pero el lector parpadea en rojo.');
-
-                    this.accessCardAttempts = (this.accessCardAttempts || 0) + 1;
-                    const usableHeight = this.scale.height - 80;
-                    const bgBase = this.add.image(0, 40, 'backgroundg3').setOrigin(0, 0);
-                    const bgAlert = this.add.image(0, 40, 'backgroundr3').setOrigin(0, 0);
-                    this.dialogueBox.setDepth(2);
-                    const scaleX = this.scale.width / bgBase.width;
-                    const scaleY = usableHeight / bgBase.height;
-                    const scale = Math.max(scaleX, scaleY);
-
-                    bgBase.setScale(scale).setDepth(0).setVisible(true);
-                    bgAlert.setScale(scale).setDepth(1).setVisible(false); // inicia oculto
-
-                    bgBase.y -= 140;
-                    bgAlert.y -= 140;
-
-                    // Elementos UI (barra superior/inferior)
-                    const g = this.add.graphics();
-                    g.fillStyle(0x000000, 1);
-                    g.fillRect(0, 0, this.scale.width, 80);
-                    g.fillRect(0, this.scale.height - 80, this.scale.width, 80);
-                    g.setDepth(2);
-                    // Parpadeo 3 veces (6 eventos: on/off)
-                    let flashCount = 0;
-                    this.time.addEvent({
-                        delay: 300, // 300 ms entre cada parpadeo
-                        repeat: 5, // 6 eventos = 3 parpadeos
-                        callback: () => {
-                            const visible = bgAlert.visible;
-                            bgAlert.setVisible(!visible); // alterna visibilidad
-                            bgBase.setVisible(visible); // complementario
-							
-                            flashCount++;
-                            if (this.accessCardAttempts === 2) {
-                                if (!this.gs.hasItem("teléfono móvil")) {
-                                    this.gs.addItem("teléfono móvil");
-                                    this.updateInventoryDisplay();
-                                    this.showDialogue("¡No funciona!¡Parece que vas a tener que llamar para que te arreglen el acceso!");
-                                }
-                            }
-                            this.updateInventoryDisplay();
-                        }
-                    });
-                } else {
-                    if (this.gs.getFlag('tiempopasa')) {
                         this.showDialogue('Usas la tarjeta y el lector parpadea en verde, puedes entrar.');
                         const usableHeight = this.scale.height - 80;
                         const bgBase = this.add.image(0, 40, 'background3').setOrigin(0, 0);
@@ -294,12 +251,10 @@ export default class SalaTercera extends Phaser.Scene {
                         //this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
 
                         this.pressureZone.on('pointerdown', () => {
-                            this.scene.start('StarWarsScene');
+                            this.scene.start('SalaCuarta');
                         });
-                    } else {
-                        this.showDialogue('te han dicho que esperes un par de minutos, ¿No tienes nada para pasar el rato?.');
-                    }
-                }
+                    
+                
             } else {
                 if (itemName === 'Carpeta') {
                     this.showDialogue('Parece que tu perro ha hecho trizas el papel con el número...\nTe va a tocar reconstruirlo...');

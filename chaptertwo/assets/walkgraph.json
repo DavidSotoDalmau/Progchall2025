@@ -4,37 +4,43 @@
       "id": "corridor1",
       "x": 164,
       "y": 304,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "meeting1",
       "x": 349,
       "y": 307,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "openSpace1",
       "x": 274,
       "y": 298,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "openSpace2",
       "x": 281,
       "y": 143,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "corner1",
       "x": 313,
       "y": 122,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "printer",
       "x": 378,
       "y": 46,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "wc",
@@ -42,121 +48,140 @@
       "y": 695,
       "spot": true,
       "targetScene": "WCScene",
-	  "label": "Servicios"
+      "label": "Servicios"
     },
     {
       "id": "meetingBig",
       "x": 470,
       "y": 698,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n1",
       "x": 343,
       "y": 154,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n2",
       "x": 469,
       "y": 630,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n4",
       "x": 464,
       "y": 556,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n7",
       "x": 439,
       "y": 485,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n8",
       "x": 393,
       "y": 450,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n9",
       "x": 414,
       "y": 384,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n11",
       "x": 540,
       "y": 486,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n12",
       "x": 645,
       "y": 490,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n13",
       "x": 652,
       "y": 593,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n14",
       "x": 560,
       "y": 436,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n15",
       "x": 565,
       "y": 398,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n16",
       "x": 607,
       "y": 437,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n17",
       "x": 597,
       "y": 397,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n18",
       "x": 739,
       "y": 450,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n19",
       "x": 734,
       "y": 361,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n20",
       "x": 780,
       "y": 357,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n21",
       "x": 684,
       "y": 358,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n25",
       "x": 879,
       "y": 443,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n26",
@@ -164,13 +189,14 @@
       "y": 600,
       "spot": true,
       "targetScene": "hroffice",
-	  "label": "HR Office"
+      "label": "HR Office"
     },
     {
       "id": "n27",
       "x": 741,
       "y": 521,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n28",
@@ -178,123 +204,141 @@
       "y": 109,
       "spot": true,
       "targetScene": "albert",
-	  "label": "Despacho de Albert"
+      "label": "Despacho de Albert"
     },
     {
       "id": "n5",
       "x": 694,
       "y": 588,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n6",
       "x": 607,
       "y": 601,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n10",
       "x": 642,
       "y": 664,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n33",
       "x": 875,
       "y": 414,
       "spot": true,
-      "targetScene": "recepcion",
-	  "label": "Reception desk"
+      "targetScene": "SalaCuarta",
+      "label": "Reception desk"
     },
     {
       "id": "n22",
       "x": 731,
       "y": 388,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n23",
       "x": 776,
       "y": 386,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n24",
       "x": 687,
       "y": 394,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n3",
       "x": 314,
       "y": 634,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n29",
       "x": 280,
       "y": 558,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n30",
       "x": 240,
       "y": 482,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n34",
       "x": 225,
       "y": 449,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n35",
       "x": 193,
       "y": 379,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n31",
       "x": 352,
       "y": 373,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n32",
       "x": 414,
       "y": 295,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n36",
       "x": 423,
       "y": 189,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n37",
       "x": 486,
       "y": 186,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n38",
       "x": 482,
       "y": 240,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n39",
       "x": 483,
       "y": 123,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n40",
       "x": 421,
       "y": 138,
-      "spot": false
+      "spot": false,
+      "label": ""
     },
     {
       "id": "n41",
@@ -302,7 +346,7 @@
       "y": 237,
       "spot": true,
       "targetScene": "cocina",
-	  "label": "Cocina"
+      "label": "Cocina"
     },
     {
       "id": "n42",
@@ -310,7 +354,7 @@
       "y": 432,
       "spot": true,
       "targetScene": "alfredo",
-	  "label": "Alfredo Pulcrano"
+      "label": "Alfredo Pulcrano"
     },
     {
       "id": "n43",
@@ -318,7 +362,15 @@
       "y": 533,
       "spot": true,
       "targetScene": "caro",
-	  "label": "Carolina Lezama"
+      "label": "Carolina Lezama"
+    },
+    {
+      "id": "n44",
+      "x": 402,
+      "y": 496,
+      "spot": true,
+      "targetScene": "PlayerPlace",
+      "label": "Sitio Reservado para hoy!"
     }
   ],
   "edges": {
@@ -378,7 +430,8 @@
       "n4",
       "n8",
       "n11",
-      "n30"
+      "n30",
+      "n44"
     ],
     "n8": [
       "n7",
@@ -545,6 +598,9 @@
     ],
     "n43": [
       "n4"
+    ],
+    "n44": [
+      "n7"
     ]
   }
 }
