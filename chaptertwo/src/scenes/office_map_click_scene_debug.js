@@ -66,6 +66,8 @@ export default class OfficeMapClickScene extends Phaser.Scene {
     }
 
     create() {
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.onShutdown, this);
+        
         this.gs = this.registry.get('gameState') || gameState;
 
         this.Phase = this.gs.getPhase();
@@ -729,12 +731,14 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             const clickNearThisSpot = atNode && atNode.id === nearest.id && this.spots.has(nearest.id);
             if (clickNearThisSpot && this.lastArrivedSpotId === nearest.id) {
                 if (this.isSpotActive(nearest.id)) {
-					const resumeFrom = {
-                    nodeId: atNode?.id || null,
-                    x: this.player.x,
-                    y: this.player.y
-                };
-                    this.scene.start(nearest.targetScene || 'OfficeMapClickScene',{resumeFrom:this.resumeFrom});
+                    const resumeFrom = {
+                        nodeId: atNode?.id || null,
+                        x: this.player.x,
+                        y: this.player.y
+                    };
+                    this.scene.start(nearest.targetScene || 'OfficeMapClickScene', {
+                        resumeFrom: this.resumeFrom
+                    });
                 } else {
                     // feedback opcional: pequeño “buzzer”
                     this.addTempText('Bloqueado', nearest.x + 14, nearest.y - 18);
@@ -822,4 +826,57 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             meetingBig: ['wc']
         };
     }
+    onShutdown() {
+        // 1) Listeners de input
+        this.input?.removeAllListeners();
+
+        // 2) Timers y tweens
+        this.time?.removeAllEvents();
+        this.tweens?.killAll();
+
+        // 3) Objetos gráficos / grupos que sueles crear
+        this.dialogueGroupnpc?.destroy(true);
+        this.dialogueGroupnpc = null;
+
+        this.inventoryGroup?.clear(true, true);
+        this.inventoryGroup = null;
+
+        this.contextMenuGroup?.clear(true, true);
+        this.contextMenuGroup = null;
+
+        this.spotLayer?.destroy();
+        this.spotLayer = null;
+
+        this.bands?.destroy();
+        this.bands = null;
+
+        this.objectiveMarker?.destroy();
+        this.objectiveMarker = null;
+
+        this.tooltipText?.destroy();
+        this.tooltipText = null;
+
+        this.npcTooltip?.destroy();
+        this.npcTooltip = null;
+
+        this.bg?.destroy();
+        this.bg = null;
+
+        this.dialogueBox?.destroy();
+        this.dialogueBox = null;
+
+        // 4) NPCs
+        if (this.npcs) {
+            for (const npc of this.npcs)
+                npc.sprite?.destroy();
+            this.npcs.length = 0;
+        }
+        this.npcActiveIds?.clear();
+
+        // 5) Arrays auxiliares
+        if (Array.isArray(this.sceneInteractives)) {
+            this.sceneInteractives.length = 0;
+        }
+    }
+
 }

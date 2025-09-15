@@ -11,15 +11,15 @@ export default class SalaCuarta extends Phaser.Scene {
         super('SalaCuarta');
     }
     preload() {
-         this.load.image('recepcion', 'assets/fondoe4.png');
+        this.load.image('recepcion', 'assets/fondoe4.png');
         this.load.image('Anna', 'assets/AnnaPons.png');
         this.load.image('item', 'assets/objeto.png');
         this.load.audio("ambient", "assets/ambientsound.mp3");
     }
     create() {
-		if (!this.sceneInteractives) {
-		this.sceneInteractives = [this.player, this.item, this.pressureZone];
-		}
+        if (!this.sceneInteractives) {
+            this.sceneInteractives = [this.player, this.item, this.pressureZone];
+        }
         addHelpButton(this);
 
         this.gs = this.registry.get('gameState') || gameState;
@@ -51,64 +51,73 @@ export default class SalaCuarta extends Phaser.Scene {
         g.fillRect(0, this.scale.height - 60, this.scale.width, 60);
         this.inventoryGroup = this.add.group();
         this.gs.addItem("tarjetas de acceso");
-		this.gs.addItem("teléfono móvil");
-		this.gs.addItem("Ordenador Portatil");
+        this.gs.addItem("teléfono móvil");
+        this.gs.addItem("Ordenador Portatil");
         this.updateInventoryDisplay();
         this.player = this.add.sprite(750, 308, 'Anna')
-  .setScale(0.1) // ajusta el tamaño del sprite
-  .setInteractive({ useHandCursor: true });
+            .setScale(0.1) // ajusta el tamaño del sprite
+            .setInteractive({
+                useHandCursor: true
+            });
 
-      // Tooltip general para las zonas
-this.zoneTooltip = this.add.text(0, 0, '', {
-  font: '16px monospace',
-  fill: '#ffff00',
-  backgroundColor: '#000000',
-  padding: { x: 6, y: 4 }
-}).setDepth(10).setVisible(false).setScrollFactor(0);
+        // Tooltip general para las zonas
+        this.zoneTooltip = this.add.text(0, 0, '', {
+            font: '16px monospace',
+            fill: '#ffff00',
+            backgroundColor: '#000000',
+            padding: {
+                x: 6,
+                y: 4
+            }
+        }).setDepth(10).setVisible(false).setScrollFactor(0);
 
-// Zona izquierda: Ir a la oficina
-this.leftZone = this.add.zone(0, this.scale.height / 2, 120, this.scale.height) // x=0, ancho 120px
-  .setOrigin(0, 0.5)
-  .setInteractive({ useHandCursor: true });
+        // Zona izquierda: Ir a la oficina
+        this.leftZone = this.add.zone(0, this.scale.height / 2, 120, this.scale.height) // x=0, ancho 120px
+            .setOrigin(0, 0.5)
+            .setInteractive({
+                useHandCursor: true
+            });
 
-this.leftZone.on('pointerover', () => {
-  this.zoneTooltip.setText("Ir a la oficina");
-  this.zoneTooltip.setPosition(20, this.scale.height - 40);
-  this.zoneTooltip.setVisible(true);
-});
-this.leftZone.on('pointerout', () => this.zoneTooltip.setVisible(false));
-const resumeFrom = {
-        nodeId: null,
-        x: 875,
-        y: 414
-      };
-	  const data = {
+        this.leftZone.on('pointerover', () => {
+            this.zoneTooltip.setText("Ir a la oficina");
+            this.zoneTooltip.setPosition(20, this.scale.height - 40);
+            this.zoneTooltip.setVisible(true);
+        });
+        this.leftZone.on('pointerout', () => this.zoneTooltip.setVisible(false));
+        const resumeFrom = {
+            nodeId: null,
+            x: 875,
+            y: 414
+        };
+        const data = {
             startSpotId: "n33",
-			resumeFrom:this.resumeFrom
+            resumeFrom: this.resumeFrom
 
         };
-	 
-	  if (this.gs.getPhase()===0) {
-		   data.spotMessage = "¡Alguien me llama desde HR!";
-	  }
-this.leftZone.on('pointerdown', () => {
-  this.scene.start('OfficeMapClickScene', data); // ⚡ cambia a la escena que corresponda
-});
 
-// Zona derecha: Salir de la oficina
-this.rightZone = this.add.zone(this.scale.width, this.scale.height / 2, 120, this.scale.height) // x = ancho de pantalla
-  .setOrigin(1, 0.5)
-  .setInteractive({ useHandCursor: true });
+        if (this.gs.getPhase() === 0) {
+            data.spotMessage = "¡Alguien me llama desde HR!";
+        }
+        this.leftZone.on('pointerdown', () => {
+            this.scene.start('OfficeMapClickScene', data); // ⚡ cambia a la escena que corresponda
+        });
 
-this.rightZone.on('pointerover', () => {
-  this.zoneTooltip.setText("Salir de la oficina");
-  this.zoneTooltip.setPosition(this.scale.width - 200, this.scale.height - 40);
-  this.zoneTooltip.setVisible(true);
-});
-this.rightZone.on('pointerout', () => this.zoneTooltip.setVisible(false));
-this.rightZone.on('pointerdown', () => {
-  this.scene.start('SalaTercera'); // ⚡ cámbiala por la escena de salida
-});
+        // Zona derecha: Salir de la oficina
+        this.rightZone = this.add.zone(this.scale.width, this.scale.height / 2, 120, this.scale.height) // x = ancho de pantalla
+            .setOrigin(1, 0.5)
+            .setInteractive({
+                useHandCursor: true
+            });
+
+        this.rightZone.on('pointerover', () => {
+            this.zoneTooltip.setText("Salir de la oficina");
+            this.zoneTooltip.setPosition(this.scale.width - 200, this.scale.height - 40);
+            this.zoneTooltip.setVisible(true);
+        });
+        this.rightZone.on('pointerout', () => this.zoneTooltip.setVisible(false));
+        this.rightZone.on('pointerdown', () => {
+            this.scene.start('SalaTercera'); // ⚡ cámbiala por la escena de salida
+        });
         this.dialogueBox = this.add.text(20, 340, '', {
             font: '18px monospace',
             fill: '#ffffff',
@@ -122,11 +131,9 @@ this.rightZone.on('pointerdown', () => {
             }
         }).setDepth(1).setScrollFactor(0);
 
-  
-  
-this.events.once('shutdown', () => {
-  this.input.off('pointerdown', this._contextualPointerClose, this);
-});
+        this.events.once('shutdown', () => {
+            this.input.off('pointerdown', this._contextualPointerClose, this);
+        });
     }
 
     onObjectClicked(pointer, gameObject) {
@@ -182,35 +189,39 @@ this.events.once('shutdown', () => {
             this.contextMenuGroup.add(optionText);
         });
         // 🔁 Escucha un clic fuera del menú para cerrarlo
-       this.input.off('pointerdown', this._contextualPointerClose, this);
+        this.input.off('pointerdown', this._contextualPointerClose, this);
 
-this._contextualPointerClose = (pointer, objectsOver) => {
-  const clickedOnOption = objectsOver.some(obj => this.contextMenuGroup.contains(obj));
-  if (!clickedOnOption) {
-    this.contextMenuGroup.clear(true, true);
-    this.enableSceneInteractions();
-    this.input.off('pointerdown', this._contextualPointerClose, this); // limpieza
-  }
-};
+        this._contextualPointerClose = (pointer, objectsOver) => {
+            const clickedOnOption = objectsOver.some(obj => this.contextMenuGroup.contains(obj));
+            if (!clickedOnOption) {
+                this.contextMenuGroup.clear(true, true);
+                this.enableSceneInteractions();
+                this.input.off('pointerdown', this._contextualPointerClose, this); // limpieza
+            }
+        };
 
-this.time.delayedCall(0, () => {
-  this.input.on('pointerdown', this._contextualPointerClose, this);
-});
+        this.time.delayedCall(0, () => {
+            this.input.on('pointerdown', this._contextualPointerClose, this);
+        });
 
     }
-   disableSceneInteractions() {
-  if (!this.sceneInteractives) return;
-  this.sceneInteractives
-    .filter(obj => obj && obj.disableInteractive)
-    .forEach(obj => obj.disableInteractive());
-}
+    disableSceneInteractions() {
+        if (!this.sceneInteractives)
+            return;
+        this.sceneInteractives
+        .filter(obj => obj && obj.disableInteractive)
+        .forEach(obj => obj.disableInteractive());
+    }
 
-enableSceneInteractions() {
-	if (!this.sceneInteractives) return;
-  this.sceneInteractives
-    .filter(obj => obj && obj.setInteractive)
-    .forEach(obj => obj.setInteractive({ useHandCursor: true }));
-}
+    enableSceneInteractions() {
+        if (!this.sceneInteractives)
+            return;
+        this.sceneInteractives
+        .filter(obj => obj && obj.setInteractive)
+        .forEach(obj => obj.setInteractive({
+                useHandCursor: true
+            }));
+    }
     updateInventoryDisplay() {
         if (this.inventoryGroup) {
             this.inventoryGroup.clear(true, true);
@@ -252,31 +263,16 @@ enableSceneInteractions() {
     handleInventoryAction(action, itemName) {
         switch (action) {
         case 'Examinar':
-            if (itemName === 'objeto misterioso') {
-                this.showDialogue('¡Descubres que el objeto misterioso es una tarjeta de acceso!');
-                this.gs.removeItem('objeto misterioso');
-                this.gs.addItem('tarjetas de acceso');
-                this.gs.setFlag('hasExaminedMisteriousObject');
-                this.updateInventoryDisplay();
-            } else if (itemName === 'tarjetas de acceso') {
+            if (itemName === 'tarjetas de acceso') {
                 this.showDialogue('Es un porta-tarjetas con el logotipo de ERNI. Quizá abra alguna puerta cercana.');
-            } else if (itemName === 'Carpeta') {
-                this.showDialogue('Una carpeta con el logo de ERNI.');
             } else {
                 this.showDialogue(`No ves nada especial en el ${itemName}.`);
             }
             break;
         case 'Usar':
-            if (itemName === 'objeto misterioso') {
-                this.showDialogue('El objeto emite un leve zumbido al usarlo... pero nada más.');
-            } else if (itemName === 'tarjetas de acceso') {
+            if (itemName === 'tarjetas de acceso') {
                 this.showDialogue('¿Dónde quieres que las use? Aquí no hay ningún lector...');
-            } else if (itemName === 'Carpeta') {
-                this.showDialogue('Abres la Carpeta, hay varios documentos corporativos, deberías pensar en ir entrando al edificio.');
-                //this.zoneDebug = this.add.graphics();
-                //this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
-                //this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
-            } else {
+            }else {
                 this.showDialogue(`No puedes usar el ${itemName} aquí.`);
             }
             break;

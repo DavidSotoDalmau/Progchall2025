@@ -1,6 +1,7 @@
 import {
     addHelpButton
-}from "../ui/HelpButton.js";
+}
+from "../ui/HelpButton.js";
 import {
     gameState
 }
@@ -24,9 +25,9 @@ export default class SalaSegunda extends Phaser.Scene {
         }
         addHelpButton(this);
 
-        console.log(this.scene.manager.keys);
         this.gs = this.registry.get('gameState') || gameState;
-
+        this.inventoryGroup = this.add.group();
+		this.updateInventoryDisplay();
         this.gs.setFlag('entered', true);
         this.dialogueUsedOptions = {};
         const usableHeight = this.scale.height - 80; // 20px arriba y 20px abajo
@@ -45,7 +46,6 @@ export default class SalaSegunda extends Phaser.Scene {
         g.fillRect(0, 0, this.scale.width, 80);
         g.fillRect(0, this.scale.height - 80, this.scale.width, 80);
 
-        const mensaje = 'Has entrado en la recepción de las oficinas del triangle.';
         this.dialogueBox = this.add.text(20, 140, '', {
             font: '18px monospace',
             fill: '#ffffff',
@@ -71,17 +71,6 @@ export default class SalaSegunda extends Phaser.Scene {
             }
         }).setDepth(1).setScrollFactor(0);
 
-        const text = this.add.text(80, 80, mensaje, {
-            font: '20px monospace',
-            fill: '#ffffff',
-            wordWrap: {
-                width: 640
-            }, // Opcional: envoltorio de línea
-            padding: {
-                x: 10,
-                y: 10
-            }
-        });
         this.npc = this.add.sprite(900, 275, 'npcuno').setInteractive({
             useHandCursor: true
         });
@@ -89,25 +78,8 @@ export default class SalaSegunda extends Phaser.Scene {
         this.npc.on('pointerdown', () => {
             this.startDialogueWithNPC();
         });
-        // Fondo del texto (con margen)
-        const bgt = this.add.graphics();
-        bgt.fillStyle(0x000000, 1);
-        bgt.fillRect(
-            text.x - 10,
-            text.y - 10,
-            text.width + 20,
-            text.height + 20);
-
-        // Asegurar que el texto esté por encima del fondo
-        text.setDepth(1);
-
-        // Agrupar para ocultar fácilmente luego
-        const group = this.add.group([bgt, text]);
-
-        // Temporizador para eliminarlo después de 5 segundos
-        this.time.delayedCall(2000, () => {
-            group.clear(true, true); // Elimina ambos
-        });
+       
+       
 
         const backButton = this.add.text(1050, 680, '[Salir del edificio]', {
             font: '16px monospace',
@@ -134,7 +106,7 @@ export default class SalaSegunda extends Phaser.Scene {
         background.fillRect(740, 180, 300, 20);
         this.dialogueGroup.add(background);
 
-        const npcResponse = this.add.text(740, 180, "¿Qué quieres saber, forastero?", {
+        const npcResponse = this.add.text(740, 180, "¡Buenos días!", {
             font: '18px monospace',
             fill: '#ffffff',
             wordWrap: {
@@ -144,13 +116,10 @@ export default class SalaSegunda extends Phaser.Scene {
         this.dialogueGroup.add(npcResponse);
 
         const options = [
-            "¡Hola! Vengo a ERNI, ¡es mi primer día!",
-            "¿A qué piso hay que ir?"
+            "¡Buenos días!"
+
         ];
-        if (!this.gs.getFlag('hasExaminedMisteriousObject') && this.gs.getFlag('tarjetaclue')) {
-            options.push("No encuentro la tarjeta");
-        };
-        options.push("Nada, gracias.");
+
         options.forEach((option, index) => {
             const used = this.dialogueUsedOptions[option];
             const optionText = this.add.text(700, 520 + index * 25, option, {
@@ -178,28 +147,13 @@ export default class SalaSegunda extends Phaser.Scene {
     showDialogueResponse(option) {
         // Limpia opciones anteriores
         this.dialogueGroup.clear(true, true);
-
-        // Si la opción es “Nada, gracias.”, cerramos sin mostrar respuesta
-        if (option === "Nada, gracias.") {
+        if (option === "¡Buenos días!") {
 
             this.dialogueGroup.setVisible(false);
 
             return;
         }
         this.dialogueGroup.setVisible(true);
-        if (option === "¡Hola! Vengo a ERNI, ¡es mi primer día!") {
-            this.gs.setFlag('tarjetaclue', true);
-        }
-        // Si no, mostramos la respuesta correspondiente
-        const respuestas = {
-            "¡Hola! Vengo a ERNI, ¡es mi primer día!": "¡Hola! ¡bienvenido!, te deberían haber dado una tarjeta de acceso.",
-            "¿A qué piso hay que ir?": "Tienes que subir a la tercera, las oficinas están a la derecha al salir del ascensor."
-        };
-
-        // Añadir opción condicional si falta la tarjeta
-        if (!this.gs.getFlag('hasExaminedMisteriousObject') && this.gs.getFlag('tarjetaclue')) {
-            respuestas["No encuentro la tarjeta"] = "Deberías tenerla en la carpeta, si no la encuentras, mira que no se te haya caído.";
-        }
 
         this.dialogueGroup.clear(true, true);
         const respuesta = respuestas[option];

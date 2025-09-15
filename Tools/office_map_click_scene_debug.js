@@ -287,6 +287,7 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             }
 
         }
+	}
         // Botón de cambio de avatar dentro de create()
 
         // ---------------- NPCs ----------------

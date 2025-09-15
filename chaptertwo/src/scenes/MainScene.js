@@ -15,19 +15,16 @@ export default class MainScene extends Phaser.Scene {
 
     preload() {
         this.load.image('background', 'assets/fondo.png');
-        this.load.image('player', 'assets/personaje.png');
-        this.load.image('item', 'assets/objeto.png');
         this.load.audio("ambient", "assets/ambientsound.mp3");
     }
-
     create() {
-		if (!this.sceneInteractives) {
-		this.sceneInteractives = [this.player, this.item, this.pressureZone];
-		}
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.onShutdown, this);
+        
+        if (!this.sceneInteractives) {
+            this.sceneInteractives = [this.pressureZone];
+        }
         addHelpButton(this);
-
         this.gs = this.registry.get('gameState') || gameState;
-
         if (!this.music || !this.music.isPlaying) {
             this.music = this.sound.add("ambient", {
                 loop: true,
@@ -35,18 +32,13 @@ export default class MainScene extends Phaser.Scene {
             });
             this.music.play();
         }
-
         this.contextMenuGroup = null;
         this.selectedInventoryItem = null;
         const usableHeight = this.scale.height - 80; // 20px arriba y 20px abajo
-
         const bg = this.add.image(0, 40, 'background').setOrigin(0, 0);
-
-        // Escala la imagen proporcionalmente al nuevo alto (sin deformarla)
         const scaleX = this.scale.width / bg.width;
         const scaleY = usableHeight / bg.height;
         const scale = Math.max(scaleX, scaleY);
-
         bg.setScale(scale);
         bg.y -= 140;
         const g = this.add.graphics();
@@ -55,13 +47,8 @@ export default class MainScene extends Phaser.Scene {
         g.fillRect(0, this.scale.height - 60, this.scale.width, 60);
         this.inventoryGroup = this.add.group();
         this.gs.addItem("tarjetas de acceso");
-		this.gs.addItem("teléfono móvil");
+        this.gs.addItem("teléfono móvil");
         this.updateInventoryDisplay();
-        this.player = this.add.sprite(50, 500, 'player').setInteractive({
-            useHandCursor: true
-        });
-
-      
         this.dialogueBox = this.add.text(20, 340, '', {
             font: '18px monospace',
             fill: '#ffffff',
@@ -74,9 +61,6 @@ export default class MainScene extends Phaser.Scene {
                 width: 760
             }
         }).setDepth(1).setScrollFactor(0);
-
-        this.input.on('gameobjectdown', this.onObjectClicked, this);
-
         this.pressureZone = this.add.zone(890, 420, 320, 480)
             .setOrigin(0.5)
             .setInteractive({
@@ -84,28 +68,12 @@ export default class MainScene extends Phaser.Scene {
             })
             .setRectangleDropZone(80, 150);
 
-        //this.zoneDebug = this.add.graphics();
-        //this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
-        //this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
-
         this.pressureZone.on('pointerdown', () => {
             this.scene.start('SalaSegunda');
         });
-this.events.once('shutdown', () => {
-  this.input.off('pointerdown', this._contextualPointerClose, this);
-});
-    }
-
-    onObjectClicked(pointer, gameObject) {
-        if (gameObject === this.player) {
-            this.showDialogue("Hola, soy el protagonista. Hoy es mi primer día. ¡Qué emoción!");
-        } else if (gameObject === this.item) {
-            this.showDialogue("Has recogido un objeto.");
-            this.gs.addItem("objeto misterioso");
-            this.gs.setFlag('tarjetarecogida', true);
-            this.item.destroy();
-            this.updateInventoryDisplay();
-        }
+        this.events.once('shutdown', () => {
+            this.input.off('pointerdown', this._contextualPointerClose, this);
+        });
     }
 
     showDialogue(text) {
@@ -149,35 +117,39 @@ this.events.once('shutdown', () => {
             this.contextMenuGroup.add(optionText);
         });
         // 🔁 Escucha un clic fuera del menú para cerrarlo
-       this.input.off('pointerdown', this._contextualPointerClose, this);
+        this.input.off('pointerdown', this._contextualPointerClose, this);
 
-this._contextualPointerClose = (pointer, objectsOver) => {
-  const clickedOnOption = objectsOver.some(obj => this.contextMenuGroup.contains(obj));
-  if (!clickedOnOption) {
-    this.contextMenuGroup.clear(true, true);
-    this.enableSceneInteractions();
-    this.input.off('pointerdown', this._contextualPointerClose, this); // limpieza
-  }
-};
+        this._contextualPointerClose = (pointer, objectsOver) => {
+            const clickedOnOption = objectsOver.some(obj => this.contextMenuGroup.contains(obj));
+            if (!clickedOnOption) {
+                this.contextMenuGroup.clear(true, true);
+                this.enableSceneInteractions();
+                this.input.off('pointerdown', this._contextualPointerClose, this); // limpieza
+            }
+        };
 
-this.time.delayedCall(0, () => {
-  this.input.on('pointerdown', this._contextualPointerClose, this);
-});
+        this.time.delayedCall(0, () => {
+            this.input.on('pointerdown', this._contextualPointerClose, this);
+        });
 
     }
-   disableSceneInteractions() {
-  if (!this.sceneInteractives) return;
-  this.sceneInteractives
-    .filter(obj => obj && obj.disableInteractive)
-    .forEach(obj => obj.disableInteractive());
-}
+    disableSceneInteractions() {
+        if (!this.sceneInteractives)
+            return;
+        this.sceneInteractives
+        .filter(obj => obj && obj.disableInteractive)
+        .forEach(obj => obj.disableInteractive());
+    }
 
-enableSceneInteractions() {
-	if (!this.sceneInteractives) return;
-  this.sceneInteractives
-    .filter(obj => obj && obj.setInteractive)
-    .forEach(obj => obj.setInteractive({ useHandCursor: true }));
-}
+    enableSceneInteractions() {
+        if (!this.sceneInteractives)
+            return;
+        this.sceneInteractives
+        .filter(obj => obj && obj.setInteractive)
+        .forEach(obj => obj.setInteractive({
+                useHandCursor: true
+            }));
+    }
     updateInventoryDisplay() {
         if (this.inventoryGroup) {
             this.inventoryGroup.clear(true, true);
@@ -219,34 +191,70 @@ enableSceneInteractions() {
     handleInventoryAction(action, itemName) {
         switch (action) {
         case 'Examinar':
-            if (itemName === 'objeto misterioso') {
-                this.showDialogue('¡Descubres que el objeto misterioso es una tarjeta de acceso!');
-                this.gs.removeItem('objeto misterioso');
-                this.gs.addItem('tarjetas de acceso');
-                this.gs.setFlag('hasExaminedMisteriousObject');
-                this.updateInventoryDisplay();
-            } else if (itemName === 'tarjetas de acceso') {
+            if (itemName === 'tarjetas de acceso') {
                 this.showDialogue('Es un porta-tarjetas con el logotipo de ERNI. Quizá abra alguna puerta cercana.');
-            } else if (itemName === 'Carpeta') {
-                this.showDialogue('Una carpeta con el logo de ERNI.');
             } else {
                 this.showDialogue(`No ves nada especial en el ${itemName}.`);
             }
             break;
         case 'Usar':
-            if (itemName === 'objeto misterioso') {
-                this.showDialogue('El objeto emite un leve zumbido al usarlo... pero nada más.');
-            } else if (itemName === 'tarjetas de acceso') {
+            if (itemName === 'tarjetas de acceso') {
                 this.showDialogue('¿Dónde quieres que las use? Aquí no hay ningún lector...');
-            } else if (itemName === 'Carpeta') {
-                this.showDialogue('Abres la Carpeta, hay varios documentos corporativos, deberías pensar en ir entrando al edificio.');
-                //this.zoneDebug = this.add.graphics();
-                //this.zoneDebug.lineStyle(2, 0x00ff0000, 0.5);
-                //this.zoneDebug.strokeRectShape(this.pressureZone.getBounds());
             } else {
                 this.showDialogue(`No puedes usar el ${itemName} aquí.`);
             }
             break;
+        }
+    }
+    onShutdown() {
+        // 1) Listeners de input
+        this.input?.removeAllListeners();
+
+        // 2) Timers y tweens
+        this.time?.removeAllEvents();
+        this.tweens?.killAll();
+
+        // 3) Objetos gráficos / grupos que sueles crear
+        this.dialogueGroupnpc?.destroy(true);
+        this.dialogueGroupnpc = null;
+
+       
+
+        this.contextMenuGroup?.clear(true, true);
+        this.contextMenuGroup = null;
+
+        this.spotLayer?.destroy();
+        this.spotLayer = null;
+
+        this.bands?.destroy();
+        this.bands = null;
+
+        this.objectiveMarker?.destroy();
+        this.objectiveMarker = null;
+
+        this.tooltipText?.destroy();
+        this.tooltipText = null;
+
+        this.npcTooltip?.destroy();
+        this.npcTooltip = null;
+
+        this.bg?.destroy();
+        this.bg = null;
+
+        this.dialogueBox?.destroy();
+        this.dialogueBox = null;
+
+        // 4) NPCs
+        if (this.npcs) {
+            for (const npc of this.npcs)
+                npc.sprite?.destroy();
+            this.npcs.length = 0;
+        }
+        this.npcActiveIds?.clear();
+
+        // 5) Arrays auxiliares
+        if (Array.isArray(this.sceneInteractives)) {
+            this.sceneInteractives.length = 0;
         }
     }
 
