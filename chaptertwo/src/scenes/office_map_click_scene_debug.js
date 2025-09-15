@@ -67,7 +67,7 @@ export default class OfficeMapClickScene extends Phaser.Scene {
 
     create() {
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.onShutdown, this);
-        
+
         this.gs = this.registry.get('gameState') || gameState;
 
         this.Phase = this.gs.getPhase();
@@ -150,11 +150,16 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             }
 
             // Ejemplo: en fase 1 (y siguientes) todo activo
-        case 1:
+        case 1: {this.gs.addActiveSpot('n44');
+                break;}
+		case 2: {
+			this.maxNPCs = 3;
+			break;
+		}
+		case 3: {}
         default: {
 
-                this.gs.addActiveSpot('n44');
-                break;
+                
             }
         }
         for (const id of this.gs.activespots) {
@@ -450,7 +455,9 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         const sprite = this.add.sprite(start.x, start.y, 'npc')
             .setScale(0.6)
             .setAlpha(0.95)
-            .setTint(this.colorForNpcId(freeId)); // ← color por id
+            .setTint(this.colorForNpcId(freeId)).setInteractive({
+                useHandCursor: true
+            }); // ← color por id
 
         const npc = {
             id: freeId, // ← guarda el id del NPC
@@ -459,7 +466,7 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             targetNodeId: null,
             speed: this.npcSpeed
         };
-
+        sprite.on('pointerdown', () => this.onNpcClicked(npc)); // ← handler
         // Marca id como en uso
         this.npcActiveIds.add(freeId);
 
@@ -468,6 +475,32 @@ export default class OfficeMapClickScene extends Phaser.Scene {
 
         this.npcs.push(npc);
         return npc;
+    }
+    onNpcClicked(npc) {
+        if (!npc || !npc.sprite)
+            return;
+
+        const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, npc.sprite.x, npc.sprite.y);
+
+        // Debe estar dentro del radio para permitir duelo
+        if (d > this.encounterRadius) {
+            this.addTempText('Acércate para iniciar el duelo', npc.sprite.x + 10, npc.sprite.y - 20);
+            return;
+        }
+
+        const atNode = this.getNearestNode(this.player.x, this.player.y);
+        const resumeFrom = {
+            nodeId: atNode?.id || null,
+            x: this.player.x,
+            y: this.player.y
+        };
+
+        this.despawnNPC(npc);
+
+        this.scene.start('DuelScene', {
+            npcId: npc.id ?? ('npc_' + Math.random().toString(36).slice(2, 7)),
+            resumeFrom
+        });
     }
 
     planNpcJourney(npc) {

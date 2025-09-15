@@ -14,7 +14,7 @@ export default class SalaCuarta extends Phaser.Scene {
         this.load.image('recepcion', 'assets/fondoe4.png');
         this.load.image('Anna', 'assets/AnnaPons.png');
         this.load.image('item', 'assets/objeto.png');
-        this.load.audio("ambient", "assets/ambientsound.mp3");
+
     }
     create() {
         if (!this.sceneInteractives) {
@@ -23,14 +23,6 @@ export default class SalaCuarta extends Phaser.Scene {
         addHelpButton(this);
 
         this.gs = this.registry.get('gameState') || gameState;
-
-        if (!this.music || !this.music.isPlaying) {
-            this.music = this.sound.add("ambient", {
-                loop: true,
-                volume: 0.5
-            });
-            this.music.play();
-        }
 
         this.contextMenuGroup = null;
         this.selectedInventoryItem = null;
@@ -98,6 +90,14 @@ export default class SalaCuarta extends Phaser.Scene {
         if (this.gs.getPhase() === 0) {
             data.spotMessage = "¡Alguien me llama desde HR!";
         }
+        if (this.gs.getPhase() === 2) {
+            this.player.on('pointerdown', () => this.startAnnaIntro());
+
+            // dispara el diálogo automáticamente al entrar si aún no está activo
+            if (!this.gs.getFlag('challengeMode')) {
+                this.startAnnaIntro();
+            }
+        }
         this.leftZone.on('pointerdown', () => {
             this.scene.start('OfficeMapClickScene', data); // ⚡ cambia a la escena que corresponda
         });
@@ -146,6 +146,175 @@ export default class SalaCuarta extends Phaser.Scene {
             this.item.destroy();
             this.updateInventoryDisplay();
         }
+    }
+    // === Diálogo AnnaPons ===
+    startAnnaIntro() {
+        // Evita repetir si ya está activo el desafío
+        if (this.gs.getFlag('challengeMode')) {
+            this.showAnnaMini();
+            return;
+        }
+
+        // Prepara contenedor de diálogo para poder limpiarlo fácil
+        this.annaUI = this.add.group();
+
+        const COLORS = {
+            NPC: '#7ad7ff',
+            PJ: '#ffd54f'
+        };
+
+        // Secuencia de líneas
+        this._annaSeq = [{
+                who: 'NPC',
+                text: "Bienvenido a ERNI, soy Anna Pons. Por aquí para moverte hace falta ingenio… y saber batirte en duelos verbales con otros ERNIans."
+            }, {
+                who: 'NPC',
+                text: "Te enseñaré lo básico: un par de 'golpes' y sus respuestas. Usalos con cabeza, ¿sí?"
+            },
+            // Enseñanza insulto/respuesta #1
+            {
+                who: 'NPC',
+                text: "INSULTO: «¿Eso es todo lo que trajiste a la daily?»"
+            }, {
+                who: 'NPC',
+                text: "RESPUESTA: «Tranquilo, guardé lo mejor para cuando realmente haga falta.»"
+            },
+            // Enseñanza insulto/respuesta #2
+            {
+                who: 'NPC',
+                text: "INSULTO: «Tu commit parece un chorizo, no se entiende nada.»"
+            }, {
+                who: 'NPC',
+                text: "RESPUESTA: «Chorizo gourmet: sabor intenso y documentación justa.»"
+            }, {
+                who: 'NPC',
+                text: "Listo. Ya puedes retar (o ser retadx). Activo el modo desafío; practica con la gente del mapa."
+            }, {
+                who: 'PJ',
+                text: "¡Gracias, Anna! Estoy listo para dar guerra (con estilo)."
+            },
+        ];
+        this._annaIdx = 0;
+
+        // Panel de texto
+        const box = this.add.text(40, 420, '', {
+            font: '18px monospace',
+            fill: '#ffffff',
+            backgroundColor: '#111111',
+            padding: {
+                x: 10,
+                y: 8
+            },
+            wordWrap: {
+                width: 820
+            }
+        }).setDepth(20).setScrollFactor(0);
+        this.annaUI.add(box);
+
+        // Botón siguiente
+        const nextBtn = this.add.text(40, 500, '▶', {
+            font: '16px monospace',
+            fill: '#00ffff',
+            backgroundColor: '#000000',
+            padding: {
+                x: 10,
+                y: 6
+            }
+        }).setInteractive({
+            useHandCursor: true
+        }).setDepth(20);
+        this.annaUI.add(nextBtn);
+
+        // Render step
+        const renderStep = () => {
+            if (this._annaIdx >= this._annaSeq.length) {
+                this.finishAnnaIntro(); // cerrar y activar modo
+                return;
+            }
+            const line = this._annaSeq[this._annaIdx];
+            const color = line.who === 'NPC' ? COLORS.NPC : COLORS.PJ;
+            box.setStyle({
+                fill: color
+            });
+            box.setText((line.who === 'NPC' ? 'Anna: ' : 'Tú: ') + line.text);
+            this._annaIdx += 1;
+        };
+
+        nextBtn.on('pointerdown', renderStep);
+
+        // primer render
+        renderStep();
+    }
+
+    finishAnnaIntro() {
+        // Guardar insultos/respuestas en el estado de juego
+        const learn = (key, arr) => {
+            const cur = this.gs.getFlag(key) || [];
+            const asSet = new Set(cur);
+            arr.forEach(s => asSet.add(s));
+            this.gs.setFlag(key, Array.from(asSet));
+        };
+
+        this.addInsultToArsenal("¿Eso es todo lo que trajiste a la daily?");
+        this.addInsultToArsenal("Tu commit parece un chorizo, no se entiende nada.");
+        this.addResponseToArsenal("Tranquilo, guardé lo mejor para cuando realmente haga falta.");
+        this.addResponseToArsenal("Chorizo gourmet: sabor intenso y documentación justa.");
+        // Activa modo desafío
+        this.gs.setFlag('challengeMode', true);
+
+        // Limpia UI
+        if (this.annaUI) {
+            this.annaUI.clear(true, true);
+            this.annaUI = null;
+        }
+
+        // Mensaje corto final
+        this.add.text(40, 420, 'Modo desafío ACTIVADO. Ve al mapa y prueba tus nuevas líneas.', {
+            font: '18px monospace',
+            fill: '#7ad7ff',
+            backgroundColor: '#111111',
+            padding: {
+                x: 10,
+                y: 8
+            },
+            wordWrap: {
+                width: 820
+            }
+        }).setDepth(20).setScrollFactor(0);
+        this.time.delayedCall(1600, () => {
+            // si quieres devolver a mapa automáticamente, descomenta:
+            // this.scene.start('OfficeMapClickScene', { startSpotId: 'n33' });
+        });
+    }
+    addInsultToArsenal(insultText) {
+        if (!gameState.arsenalInsultos.includes(insultText)) {
+            gameState.arsenalInsultos.push(insultText);
+        }
+
+    }
+
+    addResponseToArsenal(responseText) {
+        if (!gameState.arsenalRespuestas.includes(responseText)) {
+            gameState.arsenalRespuestas.push(responseText);
+        }
+
+    }
+    // Si ya estaba activado y clicas a Anna de nuevo
+    showAnnaMini() {
+        const msg = "Recuerda: combina insultos y respuestas con buen timing. Si te quedas en blanco, observa y aprende. ¡Suerte!";
+        const tip = this.add.text(40, 420, 'Anna: ' + msg, {
+            font: '18px monospace',
+            fill: '#7ad7ff',
+            backgroundColor: '#111111',
+            padding: {
+                x: 10,
+                y: 8
+            },
+            wordWrap: {
+                width: 820
+            }
+        }).setDepth(20).setScrollFactor(0);
+        this.time.delayedCall(1800, () => tip.destroy());
     }
 
     showDialogue(text) {
@@ -272,7 +441,7 @@ export default class SalaCuarta extends Phaser.Scene {
         case 'Usar':
             if (itemName === 'tarjetas de acceso') {
                 this.showDialogue('¿Dónde quieres que las use? Aquí no hay ningún lector...');
-            }else {
+            } else {
                 this.showDialogue(`No puedes usar el ${itemName} aquí.`);
             }
             break;

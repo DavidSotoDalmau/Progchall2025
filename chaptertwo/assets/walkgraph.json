@@ -46,9 +46,9 @@
       "id": "wc",
       "x": 337,
       "y": 695,
-      "spot": true,
-      "targetScene": "WCScene",
-      "label": "Servicios"
+      "spot": false,
+      "targetScene": "",
+      "label": ""
     },
     {
       "id": "meetingBig",

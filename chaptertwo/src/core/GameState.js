@@ -19,7 +19,8 @@ export class GameState {
             tiempopasa: false,
             sabesnumeros: false,
             introok: false,
-			caroHasMate: false
+            caroHasMate: false,
+            challengeMode: false
         };
     }
     addInsult(insult) {
@@ -65,8 +66,12 @@ export class GameState {
     setFlag(name, value = true) {
         this.flags[name] = value;
     }
-    setPhase(name, value = true) {
-        this.Phase = value;
+    setPhase(n) {
+        const v = Number(n);
+        this.Phase = Number.isFinite(v) ? v : 0;
+        // si persistes:
+        
+        return this.Phase;
     }
     getPhase() {
         return this.Phase;
