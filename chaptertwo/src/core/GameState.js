@@ -18,7 +18,8 @@ export class GameState {
             hasTheCardNumber: false,
             tiempopasa: false,
             sabesnumeros: false,
-            introok: false
+            introok: false,
+			caroHasMate: false
         };
     }
     addInsult(insult) {

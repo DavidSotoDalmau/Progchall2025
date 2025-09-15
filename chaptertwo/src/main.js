@@ -11,6 +11,7 @@ import DuelScene from "./scenes/duel_scene.js";
 import PlayerPlace from "./scenes/PlayerPlace.js";
 import HRPide from "./scenes/HRPide.js";
 import alfredo from "./scenes/alfredo.js";
+import caro from "./scenes/caro.js";
 import {
     GameState
 }
@@ -24,7 +25,7 @@ const config = {
     width: 1280,
     height: 720,
     parent: "game-container",
-    scene: [MainScene, SalaCuarta,HRPide,SalaTercera,SalaSegunda , StarWarsScene,OfficeMapClickScene, DuelScene,PlayerPlace,alfredo],
+    scene: [MainScene, SalaCuarta,HRPide,SalaTercera,SalaSegunda , StarWarsScene,OfficeMapClickScene, DuelScene,PlayerPlace,alfredo,caro],
     physics: {
     default:
         "arcade",

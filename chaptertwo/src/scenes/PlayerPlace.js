@@ -17,7 +17,10 @@ export default class PlayerPlace extends Phaser.Scene {
         this.load.image('npcsonia', 'assets/SoniaJuarez.png');
         this.load.image('portatil', 'assets/Portatil.png');
     }
-
+init(data) {
+    
+  this.resumeFrom = data?.resumeFrom || null; // ← guarda origen
+  }
     create() {
         if (!this.sceneInteractives) {
             this.sceneInteractives = [this.player, this.item, this.pressureZone];

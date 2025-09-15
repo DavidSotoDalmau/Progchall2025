@@ -82,8 +82,17 @@ const resumeFrom = {
         x: 875,
         y: 414
       };
+	  const data = {
+            startSpotId: "n33",
+			resumeFrom:this.resumeFrom
+
+        };
+	 
+	  if (this.gs.getPhase()===0) {
+		   data.spotMessage = "¡Alguien me llama desde HR!";
+	  }
 this.leftZone.on('pointerdown', () => {
-  this.scene.start('OfficeMapClickScene', { startSpotId: "n33", resumeFrom: this.resumeFrom  }); // ⚡ cambia a la escena que corresponda
+  this.scene.start('OfficeMapClickScene', data); // ⚡ cambia a la escena que corresponda
 });
 
 // Zona derecha: Salir de la oficina

@@ -50,6 +50,9 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             this.startSpotId = data.startSpotId;
         this.resumeFrom = data?.resumeFrom;
         this.maxNPCs = data?.maxNPCs || null;
+        this.incomingMsg = data?.spotMessage || null;
+        this.incomingMsgMs = data?.spotMessageMs || 5000; // por defecto 5s
+        this.incomingMsgSpotId = data?.spotId || data?.startSpotId;
     }
 
     preload() {
@@ -140,7 +143,7 @@ export default class OfficeMapClickScene extends Phaser.Scene {
                 // Bloquea todos los spots y habilita solo el objetivo (n26)
 
                 this.gs.addActiveSpot('n26');
-				this.gs.addActiveSpot('n33');
+                this.gs.addActiveSpot('n33');
                 break;
             }
 
@@ -154,7 +157,7 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         }
         for (const id of this.gs.activespots) {
             this.blockedSpots.delete(id);
-			this.gs.addActiveSpot(id);
+            this.gs.addActiveSpot(id);
         }
         // Dibuja los aros
         this.renderSpotStatus();
@@ -175,8 +178,49 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             loop: true,
             callback: () => this.maintainNPCs()
         });
+        if (this.incomingMsg && this.incomingMsgSpotId) {
+            this.showSpotMessage(this.incomingMsgSpotId, this.incomingMsg, this.incomingMsgMs);
+        }
     }
+    showSpotMessage(spotId, text, ms = 5000) {
+        const n = this.nodeById(spotId);
+        if (!n || !text)
+            return;
 
+        const t = this.add.text(n.x, n.y - 28, text, {
+            fontFamily: 'monospace',
+            fontSize: '16px',
+            color: '#fff',
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            padding: {
+                x: 8,
+                y: 6
+            },
+            wordWrap: {
+                width: 300
+            }
+        })
+            .setOrigin(0.5, 1)
+            .setDepth(1001);
+
+        // suave aparición/desaparición
+        t.setAlpha(0);
+        this.tweens.add({
+            targets: t,
+            alpha: 1,
+            duration: 200,
+            ease: 'Sine.out'
+        });
+        this.time.delayedCall(ms - 250, () => {
+            this.tweens.add({
+                targets: t,
+                alpha: 0,
+                duration: 250,
+                ease: 'Sine.in',
+                onComplete: () => t.destroy()
+            });
+        });
+    }
     update(_t, dt) {
         this.updatePlayer(dt);
         this.updateNPCs(dt);
@@ -685,7 +729,12 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             const clickNearThisSpot = atNode && atNode.id === nearest.id && this.spots.has(nearest.id);
             if (clickNearThisSpot && this.lastArrivedSpotId === nearest.id) {
                 if (this.isSpotActive(nearest.id)) {
-                    this.scene.start(nearest.targetScene || 'OfficeMapClickScene');
+					const resumeFrom = {
+                    nodeId: atNode?.id || null,
+                    x: this.player.x,
+                    y: this.player.y
+                };
+                    this.scene.start(nearest.targetScene || 'OfficeMapClickScene',{resumeFrom:this.resumeFrom});
                 } else {
                     // feedback opcional: pequeño “buzzer”
                     this.addTempText('Bloqueado', nearest.x + 14, nearest.y - 18);
