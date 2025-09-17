@@ -113,9 +113,9 @@ export default class OfficeMapClickScene extends Phaser.Scene {
                 if (!this.isSpot(n))
                     continue;
                 const active = this.isSpotActive(n.id);
-                const strokeColor = active ? 0x33ff66 : 0xff6666; // verde / rojo
+                const strokeColor = active ? 0x00ff00 : 0xff6666; // verde / rojo
                 const alpha = active ? 0.9 : 0.6;
-                this.spotLayer.lineStyle(3, strokeColor, alpha);
+                this.spotLayer.lineStyle(2, strokeColor, alpha);
                 //this.spotLayer.strokeCircle(n.x, n.y, 18);
                 // opcional: puntito interior
                 this.spotLayer.fillStyle(strokeColor, active ? 0.35 : 0.2);
@@ -136,7 +136,12 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         } // Player
 
 
-        this.player = this.add.sprite(spawnX, spawnY, 'player').setScale(0.6);
+        //this.player = this.add.sprite(spawnX, spawnY, 'player').setScale(0.6);
+        this.player = this.createTopDownDude(this, spawnX, spawnY, {
+            radius: 3,
+            color: 0x00ff00,
+            depth: 5
+        });
         this.lastArrivedSpotId = null;
         const OBJ_NODE_ID = 'n26';
         this.blockedSpots = new Set([...this.spots]);
@@ -150,17 +155,16 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             }
 
             // Ejemplo: en fase 1 (y siguientes) todo activo
-        case 1: {this.gs.addActiveSpot('n44');
-                break;}
-		case 2: {
-			this.maxNPCs = 3;
-			break;
-		}
-		case 3: {}
-        default: {
-
-                
+        case 1: {
+                this.gs.addActiveSpot('n44');
+                break;
             }
+        case 2: {
+                this.maxNPCs = 3;
+                break;
+            }
+        case 3: {}
+        default: {}
         }
         for (const id of this.gs.activespots) {
             this.blockedSpots.delete(id);
@@ -188,6 +192,68 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         if (this.incomingMsg && this.incomingMsgSpotId) {
             this.showSpotMessage(this.incomingMsgSpotId, this.incomingMsg, this.incomingMsgMs);
         }
+    }
+    // Crea un "dude" top-down: círculo + 2 brazos + 2 piernas
+    createTopDownDude(scene, x, y, {
+        radius = 3,
+        color = 0x00ff00,
+        depth = 1
+    }) {
+        const c = scene.add.container(x, y).setDepth(depth);
+
+        const body = scene.add.circle(0, 0, radius, color).setStrokeStyle(2, 0x00ff00, 0.5);
+
+        const armLen = Math.round(radius * 1.2),
+        armThk = 3;
+        const armL = scene.add.rectangle(-radius, 0, armLen, armThk, color).setOrigin(1, 0.5);
+        const armR = scene.add.rectangle(radius, 0, armLen, armThk, color).setOrigin(0, 0.5);
+
+        const legLen = Math.round(radius * 1.3),
+        legThk = 3;
+        const legL = scene.add.rectangle(-radius * 0.4, radius, legThk, legLen, color).setOrigin(0.5, 0);
+        const legR = scene.add.rectangle(radius * 0.4, radius, legThk, legLen, color).setOrigin(0.5, 0);
+
+        c.add([legL, legR, armL, armR, body]);
+
+        // clickable (hit area circular)
+        c.setSize(radius * 2, radius * 2);
+        c.setInteractive(new Phaser.Geom.Circle(0, 0, radius + 8), Phaser.Geom.Circle.Contains);
+
+        // animación de “andar”
+        c._walkT = 0;
+        const idlePose = () => {
+            armL.rotation = 0;
+            armR.rotation = 0;
+            legL.rotation = 0;
+            legR.rotation = 0;
+            body.y = 0;
+        };
+        idlePose();
+
+        c.updateWalk = (dt, speed = 0, vx = 0, vy = 0) => {
+            const moving = speed > 2;
+            if (!moving) {
+                c._walkT = 0;
+                idlePose();
+                return;
+            }
+
+            c._walkT += dt * (0.01 + Math.min(speed, 200) * 0.002);
+            const A = 25;
+            const s = Math.sin(c._walkT),
+            cs = Math.cos(c._walkT);
+
+            armL.rotation = Phaser.Math.DegToRad(+A * s);
+            armR.rotation = Phaser.Math.DegToRad(-A * s);
+            legL.rotation = Phaser.Math.DegToRad(-A * s * 0.6);
+            legR.rotation = Phaser.Math.DegToRad(+A * s * 0.6);
+            body.y = (cs * 0.6);
+
+            if (vx || vy)
+                c.rotation = Math.atan2(vy, vx);
+        };
+
+        return c;
     }
     showSpotMessage(spotId, text, ms = 5000) {
         const n = this.nodeById(spotId);
@@ -451,14 +517,19 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         const start = this.pickNodeWithNeighbors(fromNodeId);
         if (!start)
             return null;
-
-        const sprite = this.add.sprite(start.x, start.y, 'npc')
-            .setScale(0.6)
-            .setAlpha(0.95)
-            .setTint(this.colorForNpcId(freeId)).setInteractive({
-                useHandCursor: true
-            }); // ← color por id
-
+        const tintById = this.colorForNpcId(freeId);
+        const sprite = this.createTopDownDude(this, start.x, start.y, {
+            radius: 9,
+            color: tintById,
+            depth: 4
+        });
+        /*const sprite = this.add.sprite(start.x, start.y, 'npc')
+        .setScale(0.6)
+        .setAlpha(0.95)
+        .setTint(this.colorForNpcId(freeId)).setInteractive({
+        useHandCursor: true
+        }); // ← color por id
+         */
         const npc = {
             id: freeId, // ← guarda el id del NPC
             sprite,
@@ -705,17 +776,27 @@ export default class OfficeMapClickScene extends Phaser.Scene {
     }
 
     stepTo(sprite, targetNode, speed, delta) {
-        const dx = targetNode.x - sprite.x,
-        dy = targetNode.y - sprite.y;
+        const dx = targetNode.x - sprite.x;
+        const dy = targetNode.y - sprite.y;
         const dist = Math.hypot(dx, dy);
+
         if (dist < 3) {
+            if (sprite.updateWalk)
+                sprite.updateWalk(delta, 0, 0, 0);
             sprite.x = targetNode.x;
             sprite.y = targetNode.y;
             return true;
         }
+
         const v = speed * (delta / 1000);
-        sprite.x += (dx / dist) * v;
-        sprite.y += (dy / dist) * v;
+        const vx = (dx / dist) * v;
+        const vy = (dy / dist) * v;
+
+        sprite.x += vx;
+        sprite.y += vy;
+
+        if (sprite.updateWalk)
+            sprite.updateWalk(delta, speed, vx, vy);
         return false;
     }
 
