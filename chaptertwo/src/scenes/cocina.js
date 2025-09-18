@@ -112,25 +112,25 @@ export default class cocina extends Phaser.Scene {
         // Ajusta x,y,w,h a tu imagen
         this.createCabinetZones([{
                     id: 'A',
-                    label: 'Armario Izquierdo',
-                    x: 310,
-                    y: 300,
-                    w: 260,
+                    label: 'Armario',
+                    x: 530,
+                    y: 200,
+                    w: 90,
                     h: 220
                 }, {
                     id: 'B',
-                    label: 'Armario Central',
-                    x: 690,
-                    y: 300,
-                    w: 260,
-                    h: 220
+                    label: 'Armario',
+                    x: 480,
+                    y: 540,
+                    w: 120,
+                    h: 180
                 }, {
                     id: 'C',
-                    label: 'Armario Derecho',
-                    x: 1060,
-                    y: 300,
-                    w: 260,
-                    h: 220
+                    label: 'Armario',
+                    x: 930,
+                    y: 600,
+                    w: 220,
+                    h: 70
                 },
             ]);
 
