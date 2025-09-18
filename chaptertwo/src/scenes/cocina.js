@@ -167,7 +167,7 @@ export default class cocina extends Phaser.Scene {
             z.on('pointerover', () => {
                 this.cabinetHint?.setText(`${spec.label}: click para abrir/cerrar`).setVisible(true);
                 gfx.clear();
-                gfx.lineStyle(2, 0x00ff88, 0.9);
+                gfx.lineStyle(2, 0x00ff88, 0.05);
                 gfx.strokeRect(spec.x - spec.w / 2, spec.y - spec.h / 2, spec.w, spec.h);
             });
             z.on('pointerout', () => {
@@ -184,7 +184,7 @@ export default class cocina extends Phaser.Scene {
         this.cabinets[id] = !this.cabinets[id];
         this.updateBackgroundForState();
         const estado = this.cabinets[id] ? 'abierto' : 'cerrado';
-        this.showDialogue?.(`Has ${estado} el armario ${id}.`);
+        this.showDialogue?.(`Has ${estado} el armario.`);
     }
 
     keyForState() {
