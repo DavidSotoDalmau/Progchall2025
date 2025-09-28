@@ -25,6 +25,7 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         // NPCs
         this.maxNPCs = 0;
         this.npcs = [];
+        this.scriptedNpcs = [];
         this.npcSpeed = 30;
         this.npcRespawnIntervalMs = 3000;
         this.encounterRadius = 28;
@@ -63,6 +64,22 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         this.load.image('exclaim2', './assets/exclaim2.png'); // ← NUEVO
         this.load.image('exclaim3', './assets/exclaim3.png'); // ← NUEVO
         this.load.json('walkgraph', './assets/walkgraph.json');
+        this.load.spritesheet('orbitDude', './assets/personaje.png', {
+            frameWidth: 320,
+            frameHeight: 320
+        });
+        this.load.spritesheet('npcMoreno', './assets/npcmoreno.png', {
+            frameWidth: 320,
+            frameHeight: 320
+        });
+        this.load.spritesheet('npcCaro', './assets/caroanimated.png', {
+            frameWidth: 320,
+            frameHeight: 320
+        });
+		this.load.spritesheet('npcPavo', './assets/pavo_animated.png', {
+            frameWidth: 128,
+            frameHeight: 123
+        });
     }
 
     create() {
@@ -137,11 +154,27 @@ export default class OfficeMapClickScene extends Phaser.Scene {
 
 
         //this.player = this.add.sprite(spawnX, spawnY, 'player').setScale(0.6);
-        this.player = this.createTopDownDude(this, spawnX, spawnY, {
-            radius: 3,
-            color: 0x00ff00,
-            depth: 5
-        });
+        /*this.player = this.createTopDownDude(this, spawnX, spawnY, {
+        radius: 3,
+        color: 0x00ff00,
+        depth: 5
+        });*/
+        this.addStaticNPC('n43', {
+            id: 201,
+            color: 0xff8888,
+            label: 'Caro',
+            scale: 0.2,
+            texture: 'npcCaro',
+            facing: -90,
+            frames: 8
+        }, false);
+        this.addPatrolNPC("n41", "n33", {
+            texture: "npcPavo",
+            frames: 12,
+            scale: 0.13,
+            speed: 120
+        }, true);
+        this.player = this.makeWalker(spawnX, spawnY, 5, 0.2, 'orbitDude');
         this.lastArrivedSpotId = null;
         const OBJ_NODE_ID = 'n26';
         this.blockedSpots = new Set([...this.spots]);
@@ -193,6 +226,218 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             this.showSpotMessage(this.incomingMsgSpotId, this.incomingMsg, this.incomingMsgMs);
         }
     }
+    // --- HELPERS SCRIPTED NPCS ---
+
+    addStaticNPC(nodeId, opts = {}, clickable = false) {
+        const n = this.nodeById(nodeId);
+        if (!n)
+            return null;
+
+        const {
+            id = 'static_' + Math.random().toString(36).slice(2, 7),
+            depth = 4,
+            texture = 'npc', // spritesheet
+            frames = 8, // número de frames del spritesheet
+            scale = 0.2,
+            label = '',
+            facing = 0 // orientación inicial en radianes
+        } = opts;
+
+        this.createNPCAnimation(texture, frames);
+
+        const sprite = this.add.sprite(n.x, n.y, texture, 0)
+            .setDepth(depth)
+            .setScale(scale);
+
+        sprite.rotation = facing;
+
+        const npc = {
+            kind: 'static',
+            id,
+            sprite,
+            currentNodeId: nodeId,
+            label: label || this.getNpcLabelById(id),
+            _frames: frames
+        };
+
+        if (clickable) {
+            sprite.setInteractive({
+                useHandCursor: true
+            });
+            sprite.on('pointerdown', () => this.onNpcClicked(npc));
+        } else {
+            sprite.disableInteractive();
+        }
+
+        this.scriptedNpcs.push(npc);
+        return npc;
+    }
+
+    addPatrolNPC(fromNodeId, toNodeId, opts = {}, clickable = false) {
+        const from = this.nodeById(fromNodeId);
+        const to = this.nodeById(toNodeId);
+        if (!from || !to)
+            return null;
+
+        const {
+            id = 'patrol_' + Math.random().toString(36).slice(2, 7),
+            depth = 4,
+            texture = 'npc', // spritesheet
+            frames = 8, // número de frames del spritesheet
+            scale = 0.2,
+            speed = 50,
+            label = ''
+        } = opts;
+
+        this.createNPCAnimation(texture, frames);
+
+        const sprite = this.add.sprite(from.x, from.y, texture, 0)
+            .setDepth(depth)
+            .setScale(scale);
+
+        const npc = {
+            kind: 'patrol',
+            id,
+            sprite,
+            fromNodeId,
+            toNodeId,
+            dir: 1,
+            speed,
+            label: label || this.getNpcLabelById(id),
+            _frames: frames
+        };
+
+        if (clickable) {
+            sprite.setInteractive({
+                useHandCursor: true
+            });
+            sprite.on('pointerdown', () => this.onNpcClicked(npc));
+        } else {
+            sprite.disableInteractive();
+        }
+
+        this.scriptedNpcs.push(npc);
+        return npc;
+    }
+    updateScriptedNPCs(dt) {
+        for (const npc of this.scriptedNpcs) {
+            if (npc.kind === 'patrol') {
+                const from = this.nodeById(npc.fromNodeId);
+                const to = this.nodeById(npc.toNodeId);
+                if (!from || !to)
+                    continue;
+
+                const target = npc.dir === 1 ? to : from;
+                const dx = target.x - npc.sprite.x;
+                const dy = target.y - npc.sprite.y;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist < 2) {
+                    npc.dir *= -1; // cambiar dirección
+                    npc.sprite.anims.stop(); // se queda quieto
+                    npc.sprite.setFrame(0);
+                } else {
+                    const v = npc.speed * (dt / 1000);
+                    npc.sprite.x += (dx / dist) * v;
+                    npc.sprite.y += (dy / dist) * v;
+
+                    npc.sprite.rotation = Math.atan2(dy, dx);
+
+                    if (!npc.sprite.anims.isPlaying) {
+                        npc.sprite.play(npc.sprite.texture.key + '_walk');
+                    }
+                }
+            }
+        }
+    }
+    createNPCAnimation(texture, frames, fps = 8) {
+        if (!this.anims.exists(texture + '_walk')) {
+            this.anims.create({
+                key: texture + '_walk',
+                frames: this.anims.generateFrameNumbers(texture, {
+                    start: 0,
+                    end: frames - 1
+                }),
+                frameRate: fps,
+                repeat: -1
+            });
+        }
+    }
+
+    ensureOrbitWalkAnim() {
+        if (this.anims.exists('orbit_walk'))
+            return;
+        this.anims.create({
+            key: 'orbit_walk',
+            frames: this.anims.generateFrameNumbers('orbitDude', {
+                start: 0,
+                end: 5
+            }),
+            frameRate: 10, // ajusta a gusto
+            repeat: -1
+        });
+    }
+
+    // Crea un sprite animable que por defecto mira a la derecha
+    makeWalker(x, y, depth = 5, scale = 0.35, sprite) {
+        this.ensureOrbitWalkAnim();
+        const s = this.add.sprite(x, y, sprite, 0)
+            .setOrigin(0.5)
+            .setDepth(depth)
+            .setScale(scale)
+            .setInteractive({
+                useHandCursor: true
+            });
+
+        s._isMoving = false;
+        s._idle = () => {
+            s.stop();
+            s.setFrame(0);
+        };
+        return s;
+    }
+
+    // Arranca/para anim y orienta el sprite hacia el vector (vx, vy)
+    updateWalkerFacing(sprite, speed, vx, vy) {
+        const moving = speed > 2; // umbral anti-parpadeo
+        if (moving) {
+            if (!sprite._isMoving) {
+                sprite.play('orbit_walk');
+                sprite._isMoving = true;
+            }
+            // Base mirando a la DERECHA: rotamos al ángulo de movimiento
+            // atan2(vy, vx) ya está en radianes (conviene usar rotation)
+            if (vx || vy)
+                sprite.rotation = Math.atan2(vy, vx);
+        } else if (sprite._isMoving) {
+            sprite._idle();
+            sprite._isMoving = false;
+        }
+    }
+
+    // Llamar en cada paso de movimiento
+    updateWalker(sprite, dt, speed, vx, vy) {
+        const moving = speed > 2;
+
+        if (moving) {
+            if (!sprite._isMoving) {
+                sprite.play('orbit_walk');
+                sprite._isMoving = true;
+            }
+            // orientar según vector velocidad
+            const ang = Math.atan2(vy, vx);
+            // Si el arte "mira" a la derecha por defecto, esto ya va bien.
+            // Si mira hacia arriba por defecto, suma -Math.PI/2.
+            sprite.rotation = ang;
+        } else {
+            if (sprite._isMoving) {
+                sprite.stop(); // detiene la animación
+                sprite.setFrame(0); // cuadro de reposo
+                sprite._isMoving = false;
+            }
+        }
+    }
+
     // Crea un "dude" top-down: círculo + 2 brazos + 2 piernas
     createTopDownDude(scene, x, y, {
         radius = 3,
@@ -297,12 +542,27 @@ export default class OfficeMapClickScene extends Phaser.Scene {
     update(_t, dt) {
         this.updatePlayer(dt);
         this.updateNPCs(dt);
+		this.updateScriptedNPCs(dt);
         this.checkEncounters();
+        // Al final de tu update(), después de updateNPCs etc.
+        for (const npc of this.scriptedNpcs) {
+            const s = npc.sprite;
+            // velocidad (px/s) y vector dirección
+            const dx = s.x - (npc._lastX ?? s.x);
+            const dy = s.y - (npc._lastY ?? s.y);
+            const speedPxPerSec = (Math.hypot(dx, dy) / (dt || 16.7)) * 1000;
+
+            if (s.updateWalk)
+                s.updateWalk(dt, speedPxPerSec, dx, dy);
+
+            npc._lastX = s.x;
+            npc._lastY = s.y;
+        }
 
         // Tooltip spots
         const pointer = this.input.activePointer;
         const spotNode = this.pickNodeNear(pointer.x, pointer.y, 14, true);
-        const hover = this.getNpcUnderPointer(pointer.x, pointer.y, 20); // radio ajustable
+        const hover = this.getNpcUnderPointer(pointer.x, pointer.y, 20) || this.getScriptedNpcUnderPointer?.(pointer.x, pointer.y, 20); ; // radio ajustable
 
         if (hover) {
             const label = this.getNpcLabelById(hover.id);
@@ -320,6 +580,20 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             this.tooltipText.setVisible(false);
         }
 
+    }
+    getScriptedNpcUnderPointer(px, py, radius = 20) {
+        let best = null,
+        bestD = Infinity;
+        for (const npc of this.scriptedNpcs) {
+            const sx = npc.sprite.x,
+            sy = npc.sprite.y;
+            const d = Phaser.Math.Distance.Between(px, py, sx, sy);
+            if (d <= radius && d < bestD) {
+                bestD = d;
+                best = npc;
+            }
+        }
+        return best;
     }
     isSpot(node) {
         return !!node && !!node.spot;
@@ -775,28 +1049,29 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         return [];
     }
 
+    // En tu método stepTo(sprite, targetNode, speed, delta)
     stepTo(sprite, targetNode, speed, delta) {
         const dx = targetNode.x - sprite.x;
         const dy = targetNode.y - sprite.y;
         const dist = Math.hypot(dx, dy);
 
         if (dist < 3) {
-            if (sprite.updateWalk)
-                sprite.updateWalk(delta, 0, 0, 0);
+            this.updateWalkerFacing(sprite, 0, 0, 0); // idle
             sprite.x = targetNode.x;
             sprite.y = targetNode.y;
             return true;
         }
 
-        const v = speed * (delta / 1000);
+        const v = speed * (delta / 1000); // píxeles a avanzar este frame
         const vx = (dx / dist) * v;
         const vy = (dy / dist) * v;
 
         sprite.x += vx;
         sprite.y += vy;
 
-        if (sprite.updateWalk)
-            sprite.updateWalk(delta, speed, vx, vy);
+        // Pasa la velocidad nominal (no v por-frame) y el vector para el ángulo
+        this.updateWalkerFacing(sprite, speed, vx, vy);
+
         return false;
     }
 
@@ -986,6 +1261,13 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             this.npcs.length = 0;
         }
         this.npcActiveIds?.clear();
+        if (this.scriptedNpcs) {
+            for (const npc of this.scriptedNpcs) {
+                npc.timeline?.stop();
+                npc.sprite?.destroy();
+            }
+            this.scriptedNpcs.length = 0;
+        }
 
         // 5) Arrays auxiliares
         if (Array.isArray(this.sceneInteractives)) {

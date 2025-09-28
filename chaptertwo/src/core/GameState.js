@@ -20,7 +20,9 @@ export class GameState {
             sabesnumeros: false,
             introok: false,
             caroHasMate: false,
-            challengeMode: false
+            challengeMode: false,
+            pavoactivo: false,
+            pavofree: false
         };
     }
     addInsult(insult) {
@@ -70,7 +72,7 @@ export class GameState {
         const v = Number(n);
         this.Phase = Number.isFinite(v) ? v : 0;
         // si persistes:
-        
+
         return this.Phase;
     }
     getPhase() {

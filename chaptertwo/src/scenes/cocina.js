@@ -23,7 +23,7 @@ export default class cocina extends Phaser.Scene {
 
         // Base (todo cerrado)
         this.load.image('cocina000', 'assets/cocina000.png'); // == cocinabg
-
+        this.load.image('pavofree', 'assets/pavofree.png');
         // 7 combinaciones con algún armario abierto
         // bits: A (izq), B (centro), C (dcha)
         const COMBOS = ['100', '010', '001', '110', '101', '011', '111'];
@@ -181,10 +181,59 @@ export default class cocina extends Phaser.Scene {
     }
 
     toggleCabinet(id) {
+        // Si es el armario B (inferior izquierda) y se intenta abrirlo sin la flag → bloquear
+        if (
+            id === 'B' &&
+            !this.gs.getFlag('pavoactivo') && // flag no activada
+            this.cabinets.B === false // está cerrado y se quiere abrir
+        )
+        {
+            // Feedback al jugador
+            this.showDialogue?.('Está cerrado. Aunque parece que algo se mueve dentro.\nSerá mejor que lo intentes más tarde.');
+            // (Opcional) pequeño “shake” visual de la zona B para mayor feedback
+            this.tweens.add({
+                targets: this.bg,
+                x: this.bg.x + 4,
+                yoyo: true,
+                repeat: 3,
+                duration: 40,
+                onComplete: () => (this.bg.x -= 4)
+            });
+            return; // <- No cambia el estado
+        }
+
+        // Comportamiento normal abrir/cerrar
         this.cabinets[id] = !this.cabinets[id];
         this.updateBackgroundForState();
         const estado = this.cabinets[id] ? 'abierto' : 'cerrado';
         this.showDialogue?.(`Has ${estado} el armario.`);
+        if (id === 'B' && this.cabinets.B && this.gs.getFlag('pavoactivo') && !this.gs.getFlag('pavofree')) {
+            // Posición aprox. del armario B
+            const px = 480,
+            py = 540;
+
+            const pavo = this.add.sprite(px, py, 'pavofree')
+                .setOrigin(0.5, 1)
+                .setDepth(5)
+                .setScale(0.7);
+
+            const txt = this.add.text(px, py - 120, "¡Yuju! al fin libre!¡A correr!", {
+                font: '18px monospace',
+                fill: '#ffff00',
+                backgroundColor: '#000000',
+                padding: {
+                    x: 8,
+                    y: 4
+                }
+            }).setOrigin(0.5, 1).setDepth(6);
+
+            // Desaparecen a los 5s
+            this.time.delayedCall(5000, () => {
+                pavo.destroy();
+                txt.destroy();
+            });
+			this.gs.setFlag('pavofree',true)
+        }
     }
 
     keyForState() {

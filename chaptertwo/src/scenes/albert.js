@@ -13,6 +13,7 @@ export default class albert extends Phaser.Scene {
 
     preload() {
         this.load.image('albertbg', 'assets/albert.png');
+        this.load.image('albertnpc', 'assets/albertnpc.png');
 
     }
     init(data) {
@@ -27,10 +28,9 @@ export default class albert extends Phaser.Scene {
         const usableHeight = this.scale.height - 80;
         this.usableHeight = usableHeight; // ← IMPORTANTE
         addHelpButton(this);
-     
+
         this.gs = this.registry.get('gameState') || gameState;
-  
-  
+
         this.dialogueUsedOptions = {};
 
         this.pressureZonetimbre = this.add.zone(965, 320, 10, 10)
@@ -39,8 +39,6 @@ export default class albert extends Phaser.Scene {
                 useHandCursor: true
             })
             .setRectangleDropZone(80, 150);
-
-      
 
         // Si ya creaste dialogueBox arriba, lo reutilizamos:
 
@@ -68,7 +66,6 @@ export default class albert extends Phaser.Scene {
                 resumeFrom: this.resumeFrom
             });
         });
-       
 
         this.bg = this.add.image(0, 40, 'albertbg').setOrigin(0, 0);
         this.fitBackground(this.bg);
@@ -91,12 +88,90 @@ export default class albert extends Phaser.Scene {
             }
         }).setDepth(1).setScrollFactor(0);
 
-      
         this.dialogueBox.setText('');
         this.inventoryGroup = this.add.group();
         this.updateInventoryDisplay();
+        this.albertNPC = this.add.image(760, 650, 'albertnpc')
+            .setOrigin(0.5, 1)
+            .setDepth(1)
+            .setScale(0.75)
+            .setInteractive({
+                useHandCursor: true
+            });
+
+        this.albertNPC.on('pointerdown', () => this.startAlbertDialogue());
 
     }
+    startAlbertDialogue() {
+        if (this._inAlbertDialogue)
+            return;
+        this._inAlbertDialogue = true;
+
+        // Desactiva interacciones de escena mientras dura el diálogo
+        this.disableSceneInteractions();
+
+        // Diálogo lineal (tal cual pediste)
+        this._albertLines = [{
+                who: 'Albert',
+                text: '¡Hola! me pillas un poco liado, ¿Qué puedo hacer por ti?'
+            }, {
+                who: 'Tú',
+                text: 'Alfredo me ha dicho que igual me puedes dejar el ratón.'
+            }, {
+                who: 'Albert',
+                text: 'Pues tengo una reunión con Pavo pero no aparece, si lo encuentras, lo pasas a una sala, me avisas y te lo dejo en cuando empiece la reunión, ¿ok?'
+            }, {
+                who: 'Tú',
+                text: '¡Vale! voy a ello!'
+            }
+        ];
+        this._albertIndex = 0;
+
+        // Zona “tap para continuar” por encima de todo
+        this._albertTap = this.add.zone(0, 0, this.scale.width, this.scale.height)
+            .setOrigin(0)
+            .setDepth(1002)
+            .setInteractive();
+
+        this._albertTap.on('pointerdown', () => this.advanceAlbertDialogue());
+
+        // Muestra la primera línea
+        this.advanceAlbertDialogue();
+    }
+
+    advanceAlbertDialogue() {
+        const L = this._albertLines;
+        const i = this._albertIndex;
+
+        if (i >= L.length) {
+            // Fin del diálogo
+            this._albertTap?.destroy();
+            this._albertTap = null;
+            this._inAlbertDialogue = false;
+
+            // Activa la flag solicitada
+            this.gs.setFlag('pavoactivo', true);
+
+            // Feedback opcional
+            this.showDialogue('Nueva tarea: encontrar a Pavo y pasarlo a una sala.');
+
+            // Reactiva interacciones
+            this.enableSceneInteractions();
+            return;
+        }
+
+        const line = L[i];
+        const prefix = (line.who === 'Albert') ? 'Albert: ' : 'Tú: ';
+        // Escribe con efecto máquina si quieres (usa tu helper existente)
+        if (typeof this.typeText === 'function') {
+            this.typeText(this.dialogueBox, prefix + line.text, 25);
+        } else {
+            this.dialogueBox.setText(prefix + line.text);
+        }
+
+        this._albertIndex++;
+    }
+
     typeText(targetTextObj, fullText, cps = 20, onComplete) {
         // cps = caracteres por segundo (22 recomendado)
         const delay = Math.max(5, Math.floor(1000 / cps));
