@@ -159,16 +159,29 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         color: 0x00ff00,
         depth: 5
         });*/
-        this.addStaticNPC('n43', {
-            id: 201,
-            color: 0xff8888,
-            label: 'Caro',
-            scale: 0.2,
-            texture: 'npcMoreno',
-            facing: -90,
-            frames: 8
-        }, false);
-		this.addStaticNPC('n42', {
+        if (this.gs.getFlag('caroServed')) {
+            // sale desde su spot actual 'n43' hacia 'wc' y vuelve con esperas
+            this.addShuttleNPC('n43', 'n45', {
+                id: 'caro',
+                texture: 'npcMoreno',
+                frameCount: 8,
+                fps: 8,
+                speed: 60,
+                scale: 0.20,
+                orientationMode: 'angle', // o 'angle' si prefieres
+                waitAtAms: 20000, // espera en 'n43'
+                waitAtBms: 10000 // espera en 'wc'
+            });
+        } else {
+            this.addStaticNPC('n43', {
+                id: 'caro',
+                label: 'Caro',
+                texture: 'npcMoreno',
+                scale: 0.2,
+                orientationMode: 'flip',
+            }, false);
+        }
+        this.addStaticNPC('n42', {
             id: 201,
             color: 0xff8888,
             label: 'Alfredo',
@@ -245,6 +258,130 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             this.showSpotMessage(this.incomingMsgSpotId, this.incomingMsg, this.incomingMsgMs);
         }
     }
+    sayOnce(npc, key, nodeId, text, ms = 3000) {
+        npc._said ??= {};
+        if (npc._said[key])
+            return;
+        npc._said[key] = true;
+        this.showSpotMessage(nodeId, text, ms);
+    }
+    addShuttleNPC(fromNodeId, toNodeId, opts = {}) {
+        const a = this.nodeById(fromNodeId);
+        const b = this.nodeById(toNodeId);
+        if (!a || !b)
+            return null;
+
+        const {
+            id = 'shuttle_' + Math.random().toString(36).slice(2, 7),
+            depth = 4,
+            texture = 'npc',
+            frame = 0,
+            scale = 0.2,
+            speed = 40,
+            label = '',
+            orientationMode = 'flip',
+            frameCount = 8,
+            fps = 10,
+            waitAtAms = 20000, // espera en A (ms)
+            waitAtBms = 10000, // espera en B (ms)
+            clickable = false, // opcional
+            pickupItemName = null, // opcional
+        } = opts;
+
+        // anim walk si no existe
+        const walkKey = `${texture}_walk_${frameCount}_${fps}`;
+        if (!this.anims.exists(walkKey)) {
+            this.anims.create({
+                key: walkKey,
+                frames: this.anims.generateFrameNumbers(texture, {
+                    start: 0,
+                    end: frameCount - 1
+                }),
+                frameRate: fps,
+                repeat: -1
+            });
+        }
+
+        const sprite = this.add.sprite(a.x, a.y, texture, frame).setDepth(depth).setScale(scale);
+        const npc = {
+            kind: 'shuttle',
+            id,
+            sprite,
+            speed,
+            label: label || this.getNpcLabelById(id),
+            currentNodeId: a.id,
+            orientationMode,
+            animKey: walkKey,
+
+            // estado shuttle
+            _shuttle: {
+                A: a.id,
+                B: b.id,
+                goingTo: 'B', // empieza yendo A->B
+                waitAtAms,
+                waitAtBms,
+                pauseUntil: this.time.now + waitAtAms, // espera inicial en A
+            },
+
+            // movimiento incremental por nodos
+            pathNodes: [],
+            nextIdx: 1,
+
+            // interacción opcional (pickup)
+            clickable,
+            pickupItemName,
+
+            _lastX: sprite.x,
+            _lastY: sprite.y,
+        };
+
+        this.gs.setFlag('caroEnSitio', true);
+        this.gs.setFlag('caroEnWC', false);
+
+        if (clickable) {
+            sprite.setInteractive({
+                useHandCursor: true
+            });
+            sprite.on('pointerdown', () => {
+                const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, npc.sprite.x, npc.sprite.y);
+                if (d > this.encounterRadius) {
+                    this.addTempText('Acércate un poco…', npc.sprite.x + 10, npc.sprite.y - 20);
+                    return;
+                }
+
+                const itemName = npc.pickupItemName || npc.id || 'objeto';
+                this.gs.addItem?.(itemName);
+                if (npc.sprite.anims) {
+                    npc.sprite.anims.stop();
+                    npc.sprite.setFrame(0);
+                }
+                const msg = this.add.text(npc.sprite.x, npc.sprite.y - 50,
+`${itemName} se ha añadido a tu inventario`, {
+                        fontFamily: 'monospace',
+                        fontSize: '16px',
+                        color: '#ffff00',
+                        backgroundColor: '#000000',
+                        padding: {
+                            x: 6,
+                            y: 4
+                        }
+                    }).setOrigin(0.5).setDepth(2000);
+                if (itemname === 'Pavo')
+                    this.gs.setFlag('pavofree', false);
+                this.time.delayedCall(1500, () => {
+                    msg.destroy();
+                    this.despawnScriptedNPC(npc);
+                    this.updateInventoryDisplay?.();
+                });
+            });
+        } else {
+            sprite.disableInteractive();
+        }
+
+        this.scriptedNpcs.push(npc);
+        return npc;
+    }
+
     // --- HELPERS SCRIPTED NPCS ---
     applySpriteOrientation(sprite, vx, vy, mode = 'flip') {
         if (mode === 'angle') {
@@ -435,21 +572,37 @@ export default class OfficeMapClickScene extends Phaser.Scene {
                     return;
                 }
 
-                // Añade al inventario lo que toque (por defecto usa el id)
                 const itemName = npc.pickupItemName || npc.id || 'objeto';
                 this.gs.addItem?.(itemName);
-                // opcional: flag de progreso
                 if (npc.id === 'pavo') {
                     this.gs.setFlag?.('pavoCapturado', true);
+                    this.gs.addActiveSpot('meetingroom1');
                 }
 
-                // feedback opcional
-                this.addTempText(`Añadido: ${itemName}`, npc.sprite.x + 10, npc.sprite.y - 35);
+                // 🔴 detener animación antes de despawnear
+                if (npc.sprite.anims) {
+                    npc.sprite.anims.stop();
+                    npc.sprite.setFrame(0); // frame inicial como idle
+                }
 
-                // Despawnea
-                this.despawnScriptedNPC(npc);
-                // refresca inventario en UI si tienes método
-                this.updateInventoryDisplay?.();
+                // 🔔 mostrar feedback claro
+                const msg = this.add.text(npc.sprite.x, npc.sprite.y - 50, `${itemName} se ha añadido a tu inventario`, {
+                    fontFamily: 'monospace',
+                    fontSize: '16px',
+                    color: '#ffff00',
+                    backgroundColor: '#000000',
+                    padding: {
+                        x: 6,
+                        y: 4
+                    }
+                }).setOrigin(0.5).setDepth(2000);
+
+                // desaparecer mensaje y despawnear después
+                this.time.delayedCall(1500, () => {
+                    msg.destroy();
+                    this.despawnScriptedNPC(npc);
+                    this.updateInventoryDisplay?.();
+                });
             });
         } else {
             sprite.disableInteractive();
@@ -480,6 +633,101 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         for (const npc of this.scriptedNpcs) {
             if (!npc.sprite || npc.kind === 'static')
                 continue;
+            if (npc.kind === 'shuttle') {
+                const S = npc._shuttle;
+                if (!S)
+                    continue;
+
+                // 2.1) Pausa activa => idle y no mover
+                if (S.pauseUntil && this.time.now < S.pauseUntil) {
+                    if (npc.sprite.anims && npc.sprite.anims.isPlaying) {
+                        npc.sprite.anims.stop();
+                        npc.sprite.setFrame(0);
+                    }
+                    continue;
+                }
+
+                // 2.2) La pausa acaba de terminar => anunciar si salimos de A hacia B
+                if (S.pauseUntil && this.time.now >= S.pauseUntil) {
+                    // Salimos desde A hacia B
+                    if (npc.currentNodeId === S.A && S.goingTo === 'B') {
+                        this.showSpotMessage(S.A, "Con tanto mate me estoy recontrameando, me voy al servicio...", 3000);
+                    }
+                    S.pauseUntil = 0; // limpiar pausa para poder planificar
+                }
+
+                // 2.3) Si no hay camino vigente, calcular desde nodo actual a destino (A⇄B)
+                if (!npc.pathNodes || npc.pathNodes.length < 2 || npc.nextIdx >= npc.pathNodes.length) {
+                    const fromId = npc.currentNodeId || S.A;
+                    const toId = (S.goingTo === 'B') ? S.B : S.A;
+                    const path = this.findPath(fromId, toId);
+                    if (Array.isArray(path) && path.length >= 2) {
+                        npc.pathNodes = path;
+                        npc.nextIdx = 1;
+                    } else {
+                        continue; // no hay camino este frame
+                    }
+                }
+
+                // 2.4) Avance hacia el siguiente nodo del camino
+                const target = npc.pathNodes[npc.nextIdx];
+                if (!target)
+                    continue;
+
+                const dx = target.x - npc.sprite.x;
+                const dy = target.y - npc.sprite.y;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist <= 2) {
+                    // Llegó al nodo
+                    npc.sprite.x = target.x;
+                    npc.sprite.y = target.y;
+                    npc.currentNodeId = target.id;
+                    npc.nextIdx++;
+
+                    // ¿Hemos llegado a A o a B?
+                    const atA = (npc.currentNodeId === S.A);
+                    const atB = (npc.currentNodeId === S.B);
+
+                    if (atA || atB) {
+                        // Flags de estado global
+                        this.gs.setFlag('caroEnSitio', atA);
+                        this.gs.setFlag('caroEnWC', atB);
+
+                        // Pausa según destino y preparar el siguiente sentido
+                        S.pauseUntil = this.time.now + (atA ? S.waitAtAms : S.waitAtBms);
+                        S.goingTo = atA ? 'B' : 'A';
+
+                        // idle visual
+                        if (npc.sprite.anims) {
+                            npc.sprite.anims.stop();
+                            npc.sprite.setFrame(0);
+                        }
+
+                        // Forzar recalculado de ruta tras la pausa
+                        npc.pathNodes = [];
+                        npc.nextIdx = 1;
+                    }
+
+                    continue; // fin procesamiento este frame
+                }
+
+                // 2.5) Movimiento incremental + animación + orientación
+                const v = npc.speed * (dt / 1000);
+                const vx = (dx / dist) * v;
+                const vy = (dy / dist) * v;
+                npc.sprite.x += vx;
+                npc.sprite.y += vy;
+
+                if (npc.animKey && npc.sprite.anims && !npc.sprite.anims.isPlaying) {
+                    npc.sprite.play(npc.animKey);
+                }
+                this.applySpriteOrientation(npc.sprite, vx, vy, npc.orientationMode);
+
+                npc._lastX = npc.sprite.x;
+                npc._lastY = npc.sprite.y;
+                continue;
+            }
 
             // Replan huida si toca
             if (npc.behavior === 'flee') {

@@ -128,11 +128,12 @@
       "label": ""
     },
     {
-      "id": "n15",
+      "id": "meetingroom1",
       "x": 565,
       "y": 398,
-      "spot": false,
-      "label": ""
+      "spot": true,
+      "targetScene": "meetingpavo",
+      "label": "Meeting room Dalí"
     },
     {
       "id": "n16",
@@ -371,6 +372,21 @@
       "spot": true,
       "targetScene": "PlayerPlace",
       "label": "Sitio Reservado para hoy!"
+    },
+    {
+      "id": "n15",
+      "x": 371,
+      "y": 555,
+      "spot": false,
+      "label": ""
+    },
+    {
+      "id": "n45",
+      "x": 827,
+      "y": 527,
+      "spot": false,
+      "targetScene": "",
+      "label": ""
     }
   ],
   "edges": {
@@ -423,8 +439,8 @@
     "n4": [
       "n2",
       "n7",
-      "n29",
-      "n43"
+      "n43",
+      "n15"
     ],
     "n7": [
       "n4",
@@ -460,12 +476,15 @@
       "n10"
     ],
     "n14": [
-      "n15",
+			
       "n16",
-      "n11"
+      "n11",
+      "meetingroom1"
     ],
     "n15": [
-      "n14"
+      "n4",
+      "n29",
+      "n43"
     ],
     "n16": [
       "n14",
@@ -502,7 +521,8 @@
       "n25"
     ],
     "n27": [
-      "n18"
+      "n18",
+      "n45"
     ],
     "n28": [
       "openSpace2"
@@ -539,7 +559,7 @@
     "n29": [
       "n3",
       "n30",
-      "n4"
+      "n15"
     ],
     "n30": [
       "n29",
@@ -597,10 +617,17 @@
       "n34"
     ],
     "n43": [
-      "n4"
+      "n4",
+      "n15"
     ],
     "n44": [
       "n7"
+    ],
+    "meetingroom1": [
+      "n14"
+    ],
+    "n45": [
+      "n27"
     ]
   }
 }

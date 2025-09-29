@@ -22,7 +22,8 @@ export class GameState {
             caroHasMate: false,
             challengeMode: false,
             pavoactivo: false,
-            pavofree: false
+            pavofree: false,
+			caroEnSitio:true
         };
     }
     addInsult(insult) {

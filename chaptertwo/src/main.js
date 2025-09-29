@@ -27,7 +27,7 @@ const config = {
     width: 1280,
     height: 720,
     parent: "game-container",
-    scene: [cocina,MainScene, SalaCuarta,HRPide,SalaTercera,SalaSegunda , StarWarsScene,OfficeMapClickScene, DuelScene,PlayerPlace,alfredo,caro,albert],
+    scene: [MainScene,cocina, SalaCuarta,HRPide,SalaTercera,SalaSegunda , StarWarsScene,OfficeMapClickScene, DuelScene,PlayerPlace,alfredo,caro,albert],
     physics: {
     default:
         "arcade",

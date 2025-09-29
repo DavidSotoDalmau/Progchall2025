@@ -18,34 +18,28 @@ export default class caro extends Phaser.Scene {
         this.load.image('npcarofull', 'assets/carofull.png');
     }
     init(data) {
-       
+
         this.resumeFrom = data?.resumeFrom || null; // ← guarda origen
     }
     create() {
         if (!this.sceneInteractives) {
             this.sceneInteractives = [this.player, this.item, this.pressureZone];
         }
-        this.alfredo = this.add.sprite(430, 280, 'npcarofull')
-            .setOrigin(0, 0) // esquina inferior derecha
-            .setScale(0.4)
-            .setDepth(1)
-            .setInteractive({
-                useHandCursor: true
-            });
+ this.gs = this.registry.get('gameState') || gameState;
+      
+
         this.sceneInteractives = this.sceneInteractives || [];
         if (!this.sceneInteractives.includes(this.alfredo)) {
             this.sceneInteractives.push(this.alfredo);
         }
-        this.alfredo.on('pointerdown', () => {
-            this.startDialogueWithAlfredo();
-        });
+
         const usableHeight = this.scale.height - 80;
         this.usableHeight = usableHeight; // ← IMPORTANTE
         addHelpButton(this);
 
         this.input.enabled = true;
         console.log(this.scene.manager.keys);
-        this.gs = this.registry.get('gameState') || gameState;
+       
         this.accessCardAttempts = 0;
         this.gs.setFlag('entered', true);
         this.dialogueUsedOptions = {};
@@ -80,7 +74,7 @@ export default class caro extends Phaser.Scene {
             this.gs.setPhase(1);
             this.scene.start('OfficeMapClickScene', {
                 startSpotId: "n43",
-				resumeFrom:this.resumeFrom
+                resumeFrom: this.resumeFrom
             });
         });
 
@@ -109,8 +103,24 @@ export default class caro extends Phaser.Scene {
         }).setDepth(2).setScrollFactor(0);
 
         this.dialogueBox.setText('');
+		  if (this.gs.getFlag('caroEnSitio')) {
+            this.alfredo = this.add.sprite(430, 280, 'npcarofull')
+                .setOrigin(0, 0) // esquina inferior derecha
+                .setScale(0.4)
+                .setDepth(1)
+                .setInteractive({
+                    useHandCursor: true
+                });
+            this.alfredo.on('pointerdown', () => {
+                this.startDialogueWithAlfredo();
+            });
+        } else if (this.gs.getFlag('caroEnWC')) {
+            this.dialogueBox.setText("Caro no está aquí, parece que ha ido al WC.");
+        } else {
+            this.dialogueBox.setText("No ves a Caro en este momento.");
+        }
         const hasMate =
-            (Array.isArray(this.gs.inventory) && this.gs.inventory.includes('mate')) ||
+            (Array.isArray(this.gs.inventory) && this.gs.inventory.includes('Mate Preparado')) ||
         this.gs.getFlag('caroHasMate') === true;
 
         // Mensajes
@@ -196,7 +206,7 @@ export default class caro extends Phaser.Scene {
     giveMate(thanksMsg, backSpot = 'n43') {
         // quita "mate" del inventario si existe
         if (Array.isArray(this.gs.inventory)) {
-            const i = this.gs.inventory.indexOf('mate');
+            const i = this.gs.inventory.indexOf('Mate Preparado');
             if (i !== -1)
                 this.gs.inventory.splice(i, 1);
         }
@@ -210,16 +220,15 @@ export default class caro extends Phaser.Scene {
     backToMap(startSpotId = 'n43') {
         const data = {
             startSpotId: "n43",
-			resumeFrom:this.resumeFrom
+            resumeFrom: this.resumeFrom
 
         };
         if (!this.gs.getFlag('caroHasMate')) {
             data.spotMessage = "Será mejor que le consiga mate antes de interactuar con ella...";
-			this.gs.addActiveSpot('n41');
+            this.gs.addActiveSpot('n41');
         }
-        this.scene.start('OfficeMapClickScene', 
-            data
-        );
+        this.scene.start('OfficeMapClickScene',
+            data);
     }
     fitBackground(img) {
         const scaleX = this.scale.width / img.width;
