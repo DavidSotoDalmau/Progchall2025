@@ -17,6 +17,8 @@ export default class cocina extends Phaser.Scene {
             B: false,
             C: false
         };
+        this.useModeActive = false;
+        this.pendingUseItem = null;
     }
 
     preload() {
@@ -24,6 +26,8 @@ export default class cocina extends Phaser.Scene {
         // Base (todo cerrado)
         this.load.image('cocina000', 'assets/cocina000.png'); // == cocinabg
         this.load.image('pavofree', 'assets/pavofree.png');
+        this.load.image('item_taza', 'assets/taza.png');
+        this.load.image('item_mate', 'assets/mate.png');
         // 7 combinaciones con algún armario abierto
         // bits: A (izq), B (centro), C (dcha)
         const COMBOS = ['100', '010', '001', '110', '101', '011', '111'];
@@ -151,8 +155,223 @@ export default class cocina extends Phaser.Scene {
         this.dialogueBox.setText('');
         this.inventoryGroup = this.add.group();
         this.updateInventoryDisplay();
+        this.setupCabinetItems();
+        this.refreshCabinetItemVisibility();
+        this.createUseSpots();
+        this.useHint = this.add.text(20, this.scale.height - 90,
+                '', {
+                font: '14px monospace',
+                fill: '#ffff88',
+                backgroundColor: '#000000',
+                padding: {
+                    x: 8,
+                    y: 4
+                }
+            })
+            .setDepth(3).setScrollFactor(0).setVisible(false);
 
     }
+    createUseSpots() {
+        this.useSpots = []; // para referencia/limpieza si hiciera falta
+
+        const specs = [
+            // ▼ GRIFO (coords aproximadas)
+            {
+                id: 'grifo',
+                label: 'Grifo',
+                x: 780,
+                y: 510,
+                w: 160,
+                h: 80
+            },
+            // ▼ MICROONDAS (coords aproximadas)
+            {
+                id: 'microondas',
+                label: 'Microondas',
+                x: 650,
+                y: 260,
+                w: 160,
+                h: 100
+            },
+        ];
+
+        specs.forEach(spec => {
+            const z = this.add.zone(spec.x, spec.y, spec.w, spec.h)
+                .setOrigin(0.5).setInteractive({
+                    useHandCursor: true
+                }).setDepth(2);
+
+            const gfx = this.add.graphics().setDepth(2);
+
+            z.on('pointerover', () => {
+                //gfx.clear();
+                //gfx.lineStyle(2, 0x00ffff, 0.25);
+                //gfx.strokeRect(spec.x - spec.w / 2, spec.y - spec.h / 2, spec.w, spec.h);
+
+                // Si NO estamos en modo usar, solo mostramos un pequeño hint
+                this.cabinetHint?.setText(`${spec.label}`).setVisible(true);
+
+            });
+
+            z.on('pointerout', () => {
+                gfx.clear();
+                if (!this.useModeActive)
+                    this.cabinetHint?.setVisible(false);
+            });
+
+            z.on('pointerdown', () => {
+                if (!this.useModeActive) {
+                    // Fuera de modo usar, no hace nada (o pon un diálogo si quieres)
+                    this.showDialogue?.(`Es el ${spec.label}.`);
+                    return;
+                }
+                // En modo usar → confirmar uso con este spot
+                this.confirmUseOnSpot(spec.id);
+            });
+
+            this.useSpots.push({
+                spec,
+                z,
+                gfx
+            });
+            this.sceneInteractives?.push(z);
+        });
+
+        // Tecla ESC para cancelar modo usar
+        this.input.keyboard?.once('keydown-ESC', () => this.cancelUseMode());
+    }
+    enterUseMode(itemName) {
+        this.useModeActive = true;
+        this.pendingUseItem = itemName;
+        this.showDialogue?.(`Usar ${itemName} con …`);
+        this.useHint?.setText('Haz clic en: Grifo o Microondas (ESC para cancelar)')
+        .setVisible(true);
+    }
+
+    cancelUseMode() {
+        this.useModeActive = false;
+        this.pendingUseItem = null;
+        this.useHint?.setVisible(false);
+        this.cabinetHint?.setVisible(false);
+    }
+
+    confirmUseOnSpot(spotId) {
+        const item = this.pendingUseItem;
+        if (!item) {
+            this.cancelUseMode();
+            return;
+        }
+
+        // Ejecuta la lógica de "usar X con spotId"
+        this.handleUseOnSpot(item, spotId);
+
+        // Salimos de modo usar
+        this.cancelUseMode();
+    }
+
+    handleUseOnSpot(itemName, spotId) {
+        // Aquí defines las combinaciones y efectos que quieras
+        // (muestra un feedback por defecto si no hay caso específico)
+        const lower = (s) => (s || '').toLowerCase();
+
+        // Ejemplos:
+        if (spotId === 'grifo') {
+            if (lower(itemName) === 'taza') {
+                this.showDialogue?.('Llenas la taza con agua del grifo. ☕');
+                this.gs.addItem('Taza con agua');
+                this.gs.removeItem('Taza');
+                this.gs.setFlag('taza_llena', true)
+                this.updateInventoryDisplay();
+                return;
+            }
+            if (lower(itemName) === 'paquete de mate') {
+                this.showDialogue?.('Mejor primero llena la taza y luego usa el mate. 😉');
+                return;
+            }
+            this.showDialogue?.(`Usas ${itemName} con el grifo, pero no pasa nada especial.`);
+            return;
+        }
+
+        if (spotId === 'microondas') {
+            if (lower(itemName) === 'taza con agua' && this.gs.getFlag('taza_llena')) {
+                this.showDialogue?.('Calientas la taza en el microondas. ¡Cuidado, quema!');
+                this.gs.addItem('Taza con agua caliente');
+                this.gs.removeItem('Taza con agua');
+                this.gs.setFlag('taza_caliente', true);
+                this.updateInventoryDisplay();
+                return;
+            }
+            this.showDialogue?.(`Usas ${itemName} con el microondas, pero no pasa gran cosa.`);
+            return;
+        }
+
+        // Fallback
+        this.showDialogue?.(`Usas ${itemName} con ${spotId}, pero no ocurre nada.`);
+    }
+
+    // Crea los objetos de los armarios que empiezan vacíos: A (izq) y C (dcha)
+    setupCabinetItems() {
+        // grupo opcional para limpiar luego si quieres
+        this.cabinetItems = this.add.group();
+
+        // Coordenadas locales (ajústalas a tu arte)
+        // Armario A (izquierda): zona declarada en createCabinetZones x=530, y=200, w=90, h=220
+        // Colocamos la taza un poco más “dentro”
+        this.itemA = this.add.sprite(525, 216, 'item_taza')
+            .setOrigin(0.45, 0.5)
+            .setScale(0.15)
+            .setDepth(3) // por encima del fondo, por debajo de las bandas (que están a 1)
+            .setVisible(false)
+            .setInteractive({
+                useHandCursor: true
+            });
+        this.itemA._cabinetId = 'A';
+        this.itemA._invName = 'Taza';
+        this.itemA.on('pointerdown', () => this.pickCabinetItem(this.itemA));
+        this.cabinetItems.add(this.itemA);
+
+        // Armario C (derecha): en createCabinetZones x=930, y=600, w=220, h=70
+        // Colocamos el paquete de mate un poco hacia arriba
+        this.itemC = this.add.sprite(860, 620, 'item_mate')
+            .setOrigin(0.5, 0.5)
+            .setScale(0.2)
+            .setDepth(3)
+            .setVisible(false)
+            .setInteractive({
+                useHandCursor: true
+            });
+        this.itemC._cabinetId = 'C';
+        this.itemC._invName = 'Paquete de mate';
+        this.itemC.on('pointerdown', () => this.pickCabinetItem(this.itemC));
+        this.cabinetItems.add(this.itemC);
+    }
+
+    // Muestra/oculta los ítems según si su armario está abierto
+    refreshCabinetItemVisibility() {
+        if (this.itemA)
+            this.itemA.setVisible(!!this.cabinets.A && !this.itemA._picked);
+        if (this.itemC)
+            this.itemC.setVisible(!!this.cabinets.C && !this.itemC._picked);
+    }
+
+    // Recoger ítem → inventario y ocultar
+    pickCabinetItem(itemSprite) {
+        if (!itemSprite || itemSprite._picked)
+            return;
+        const name = itemSprite._invName || 'objeto';
+        // evitar duplicados
+        const inv = this.gs?.inventory || gameState.inventory || [];
+        if (!inv.includes(name)) {
+            this.gs.addItem?.(name);
+            this.showDialogue?.(`Has recogido: ${name}`);
+            this.updateInventoryDisplay?.();
+        } else {
+            this.showDialogue?.(`Ya tienes ${name}.`);
+        }
+        itemSprite._picked = true;
+        itemSprite.setVisible(false);
+    }
+
     createCabinetZones(specs) {
         specs.forEach(spec => {
             const z = this.add.zone(spec.x, spec.y, spec.w, spec.h)
@@ -199,6 +418,7 @@ export default class cocina extends Phaser.Scene {
                 duration: 40,
                 onComplete: () => (this.bg.x -= 4)
             });
+            this.refreshCabinetItemVisibility();
             return; // <- No cambia el estado
         }
 
@@ -232,7 +452,7 @@ export default class cocina extends Phaser.Scene {
                 pavo.destroy();
                 txt.destroy();
             });
-			this.gs.setFlag('pavofree',true)
+            this.gs.setFlag('pavofree', true)
         }
     }
 
@@ -247,9 +467,12 @@ export default class cocina extends Phaser.Scene {
         const key = this.keyForState();
         if (this.textures.exists(key)) {
             this.bg.setTexture(key);
-            this.fitBackground(this.bg); // mantiene escala y posición
+            this.fitBackground(this.bg);
         }
+        // ▼ NUEVO: cada vez que cambia el fondo (abrir/cerrar), revisa los ítems
+        this.refreshCabinetItemVisibility?.();
     }
+
     typeText(targetTextObj, fullText, cps = 20, onComplete) {
         // cps = caracteres por segundo (22 recomendado)
         const delay = Math.max(5, Math.floor(1000 / cps));
@@ -514,7 +737,7 @@ export default class cocina extends Phaser.Scene {
                         this.openCarpetaPuzzleDificilBitmap();
                     });
                 } else {
-                    this.showDialogue(`No puedes usar ${itemName} aquí.`);
+                    this.enterUseMode(itemName);
                 }
                 break;
             }
@@ -546,25 +769,81 @@ export default class cocina extends Phaser.Scene {
         }).setScrollFactor(0).setDepth(3);
 
         gameState.inventory.forEach((item, index) => {
-            const itemText = this.add.text(970, startY + index * 30, item, {
-                font: '16px monospace',
-                fill: '#ffff00',
-                backgroundColor: '#111111',
-                padding: {
-                    x: 8,
-                    y: 5
-                }
-            }).setInteractive({
-                useHandCursor: true
-            }).setScrollFactor(0).setDepth(3);
+            // Estilo si estamos en “usar X con …”
+            const isSource = this.useModeActive && this.pendingUseItem === item;
+            const isTargetCandidate = this.useModeActive && this.pendingUseItem !== item;
+
+            const itemText = this.add.text(970, startY + index * 30,
+                    // Cuando estamos en modo usar, marca el objetivo
+                    isSource ? `➤ ${item}` : item, {
+                    font: '16px monospace',
+                    fill: isTargetCandidate ? '#00ff00' : '#ffff00',
+                    backgroundColor: isTargetCandidate ? '#223322' : '#111111',
+                    padding: {
+                        x: 8,
+                        y: 5
+                    }
+                })
+                .setInteractive({
+                    useHandCursor: true
+                })
+                .setScrollFactor(0)
+                .setDepth(3);
 
             itemText.on('pointerdown', () => {
-                this.onInventoryItemClick(item);
+                if (!this.useModeActive) {
+                    // Comportamiento normal (abrir menú contextual)
+                    this.onInventoryItemClick(item);
+                    return;
+                }
+                // En modo “usar”, si haces clic sobre OTRO ítem → usar con ítem
+                if (this.pendingUseItem && this.pendingUseItem !== item) {
+                    this.confirmUseOnItem(item); // <- NUEVO
+                } else if (!this.pendingUseItem) {
+                    // Seguridad: si por alguna razón no hay source, toma este como source
+                    this.enterUseMode(item);
+                }
             });
 
             this.inventoryGroup.add(itemText);
         });
     }
+    confirmUseOnItem(targetItemName) {
+        const source = this.pendingUseItem;
+        if (!source) {
+            this.cancelUseMode();
+            return;
+        }
+        this.handleUseOnItem(source, targetItemName);
+        this.cancelUseMode();
+    }
+
+    handleUseOnItem(sourceItem, targetItem) {
+        const L = s => (s || '').toLowerCase().trim();
+
+        // === RECETAS / COMBINACIONES ===
+        // Ejemplo: “paquete de mate” + “taza con agua” → “mate”
+        if ((L(sourceItem) === 'paquete de mate' && L(targetItem) === 'taza con agua caliente')) {
+            // Quitar ingredientes
+            this.gs.removeItem?.('Paquete de mate');
+            this.gs.removeItem?.('Taza con agua caliente');
+            // Dar resultado
+            this.gs.addItem?.('Mate Preparado');
+            // Flags opcionales
+            this.gs.setFlag?.('mate_preparado', true);
+            this.showDialogue?.('Mezclas el mate con el agua. ¡Listo el Mate! 🧉');
+            this.updateInventoryDisplay?.();
+            return;
+        }
+
+        // Ejemplo opcional: “Mate” + “microondas” no aplica aquí (eso es spot),
+        // pero puedes encadenar más combinaciones ítem-ítem si las necesitas:
+        // if ((L(sourceItem) === 'taza' && L(targetItem) === 'paquete de mate') || ...)
+
+        // Fallback
+        this.showDialogue?.(`No parece que ${sourceItem} se pueda usar con ${targetItem}.`);
+    }
+
     startDialogueWithNPC() {
         if (this.npcContainer) {
             this.closeNPC(); // Limpieza previa si quedó algo

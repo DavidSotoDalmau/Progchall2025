@@ -130,7 +130,7 @@ export default class OfficeMapClickScene extends Phaser.Scene {
                 if (!this.isSpot(n))
                     continue;
                 const active = this.isSpotActive(n.id);
-                const strokeColor = active ? 0x00ff00 : 0xff6666; // verde / rojo
+                const strokeColor = active ? 0x000f00 : 0x0f1111; // verde / rojo
                 const alpha = active ? 0.9 : 0.6;
                 this.spotLayer.lineStyle(2, strokeColor, alpha);
                 //this.spotLayer.strokeCircle(n.x, n.y, 18);
@@ -163,6 +163,15 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             id: 201,
             color: 0xff8888,
             label: 'Caro',
+            scale: 0.2,
+            texture: 'npcMoreno',
+            facing: -90,
+            frames: 8
+        }, false);
+		this.addStaticNPC('n42', {
+            id: 201,
+            color: 0xff8888,
+            label: 'Alfredo',
             scale: 0.2,
             texture: 'npcMoreno',
             facing: -90,
