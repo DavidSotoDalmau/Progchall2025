@@ -17,7 +17,7 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         this.spotLayer = null;
         // Player
         this.player = null;
-        this.playerSpeed = 120;
+        this.playerSpeed = 300;
         this.currentPath = [];
         this.currentTarget = null;
         this.lastArrivedSpotId = null;
@@ -28,7 +28,7 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         this.scriptedNpcs = [];
         this.npcSpeed = 30;
         this.npcRespawnIntervalMs = 3000;
-        this.encounterRadius = 28;
+        this.encounterRadius = 128;
         this.autopilot = false;
         this.autopilotTargetId = null;
         this.autopilotNextScene = null;
@@ -76,7 +76,7 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             frameWidth: 320,
             frameHeight: 320
         });
-		this.load.spritesheet('npcPavo', './assets/pavo_animated.png', {
+        this.load.spritesheet('npcPavo', './assets/pavo_animated.png', {
             frameWidth: 128,
             frameHeight: 123
         });
@@ -164,16 +164,26 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             color: 0xff8888,
             label: 'Caro',
             scale: 0.2,
-            texture: 'npcCaro',
+            texture: 'npcMoreno',
             facing: -90,
             frames: 8
         }, false);
-        this.addPatrolNPC("n41", "n33", {
-            texture: "npcPavo",
-            frames: 12,
-            scale: 0.13,
-            speed: 120
-        }, true);
+        if (this.gs.getFlag('pavofree')) {
+            this.addPatrolNPC(['n41', 'n33'], {
+                id: 'pavo',
+                texture: 'npcPavo',
+                frameCount: 12,
+                fps: 12,
+                speed: 120,
+                scale: 0.13,
+                behavior: 'flee',
+                fleeReplanMs: 500,
+                orientationMode: 'flip',
+                clickable: true,
+                pickupItemName: 'pavo'
+            });
+        }
+
         this.player = this.makeWalker(spawnX, spawnY, 5, 0.2, 'orbitDude');
         this.lastArrivedSpotId = null;
         const OBJ_NODE_ID = 'n26';
@@ -227,6 +237,69 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         }
     }
     // --- HELPERS SCRIPTED NPCS ---
+    applySpriteOrientation(sprite, vx, vy, mode = 'flip') {
+        if (mode === 'angle') {
+            // Orientación real por ángulo (ojo: tu sprite “mira a la derecha” de base)
+            if (vx || vy)
+                sprite.rotation = Math.atan2(vy, vx);
+            return;
+        }
+        // Modo flip: mantiene rotation=0 y usa espejado en X
+        sprite.rotation = 0;
+        if (Math.abs(vx) >= Math.abs(vy)) {
+            // Horizontal: flip según signo de vx
+            sprite.setFlipX(vx < 0);
+        } else {
+            // Vertical: sin flip (puedes sofisticarlo si tienes anims UP/DOWN)
+            sprite.setFlipX(false);
+        }
+    }
+
+    // Elegir un vecino cuyo centro esté más lejos del jugador (huida local)
+    // Si no hay vecinos válidos, devuelve el mismo id.
+    pickNeighborAwayFromPlayer(currentId) {
+        const me = this.nodeById(currentId);
+        if (!me)
+            return currentId;
+        const px = this.player.x,
+        py = this.player.y;
+
+        const neigh = (this.edges[currentId] || []).map(id => this.nodeById(id)).filter(Boolean);
+        if (!neigh.length)
+            return currentId;
+
+        const dist2 = (x, y) => (x - px) * (x - px) + (y - py) * (y - py);
+
+        // Elige el vecino con mayor distancia al player
+        let best = null,
+        bestD2 = -Infinity;
+        for (const n of neigh) {
+            const d2 = dist2(n.x, n.y);
+            if (d2 > bestD2) {
+                bestD2 = d2;
+                best = n;
+            }
+        }
+        return best ? best.id : currentId;
+    }
+
+    // Plan de huida: cada cierto tiempo construimos un camino hacía un vecino “lejos”,
+    // y opcionalmente lo extendemos 2-3 saltos para no zigzaguear demasiado.
+    planFleePath(npc, hops = 3) {
+        let from = npc.currentNodeId;
+        const seq = [from];
+        for (let i = 0; i < hops; i++) {
+            const nextId = this.pickNeighborAwayFromPlayer(from);
+            if (!nextId || nextId === from)
+                break;
+            seq.push(nextId);
+            from = nextId;
+        }
+        // Convierte ids → nodos
+        npc.pathNodes = seq.map(id => this.nodeById(id)).filter(Boolean);
+        npc.nextIdx = Math.min(1, npc.pathNodes.length - 1);
+        npc._replanAt = this.time.now + (npc.fleeReplanMs ?? 1000); // replan en ~1s
+    }
 
     addStaticNPC(nodeId, opts = {}, clickable = false) {
         const n = this.nodeById(nodeId);
@@ -237,19 +310,14 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             id = 'static_' + Math.random().toString(36).slice(2, 7),
             depth = 4,
             texture = 'npc', // spritesheet
-            frames = 8, // número de frames del spritesheet
-            scale = 0.2,
+            frame = 0,
             label = '',
-            facing = 0 // orientación inicial en radianes
+            scale = 0.2,
+            orientationMode = 'flip' // 'flip' | 'angle'
         } = opts;
 
-        this.createNPCAnimation(texture, frames);
-
-        const sprite = this.add.sprite(n.x, n.y, texture, 0)
-            .setDepth(depth)
-            .setScale(scale);
-
-        sprite.rotation = facing;
+        const sprite = this.add.sprite(n.x, n.y, texture, frame)
+            .setDepth(depth).setScale(scale);
 
         const npc = {
             kind: 'static',
@@ -257,7 +325,9 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             sprite,
             currentNodeId: nodeId,
             label: label || this.getNpcLabelById(id),
-            _frames: frames
+            _lastX: sprite.x,
+            _lastY: sprite.y,
+            orientationMode
         };
 
         if (clickable) {
@@ -266,52 +336,112 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             });
             sprite.on('pointerdown', () => this.onNpcClicked(npc));
         } else {
-            sprite.disableInteractive();
+            sprite.disableInteractive(); // no bloquear spot debajo
         }
 
         this.scriptedNpcs.push(npc);
         return npc;
     }
 
-    addPatrolNPC(fromNodeId, toNodeId, opts = {}, clickable = false) {
-        const from = this.nodeById(fromNodeId);
-        const to = this.nodeById(toNodeId);
-        if (!from || !to)
+    addPatrolNPC(pathNodeIds = [], opts = {}) {
+        if (!Array.isArray(pathNodeIds) || pathNodeIds.length < 2)
             return null;
 
         const {
             id = 'patrol_' + Math.random().toString(36).slice(2, 7),
             depth = 4,
-            texture = 'npc', // spritesheet
-            frames = 8, // número de frames del spritesheet
+            texture = 'npc',
+            frame = 0,
             scale = 0.2,
-            speed = 50,
-            label = ''
+            speed = 40,
+            label = '',
+            loop = true,
+            yoyo = false,
+            orientationMode = 'flip',
+            frameCount = 8,
+            fps = 10,
+            behavior = 'patrol',
+            fleeReplanMs = 1000,
+
+            // ⬇️ NUEVO
+            clickable = false,
+            pickupItemName = null, // si se hace click en rango, añadimos esto al inventario
         } = opts;
 
-        this.createNPCAnimation(texture, frames);
+        const startNode = this.nodeById(pathNodeIds[0]);
+        if (!startNode)
+            return null;
 
-        const sprite = this.add.sprite(from.x, from.y, texture, 0)
-            .setDepth(depth)
-            .setScale(scale);
+        const walkKey = `${texture}_walk_${frameCount}_${fps}`;
+        if (!this.anims.exists(walkKey)) {
+            this.anims.create({
+                key: walkKey,
+                frames: this.anims.generateFrameNumbers(texture, {
+                    start: 0,
+                    end: frameCount - 1
+                }),
+                frameRate: fps,
+                repeat: -1
+            });
+        }
+
+        const sprite = this.add.sprite(startNode.x, startNode.y, texture, frame)
+            .setDepth(depth).setScale(scale);
 
         const npc = {
             kind: 'patrol',
             id,
             sprite,
-            fromNodeId,
-            toNodeId,
-            dir: 1,
             speed,
             label: label || this.getNpcLabelById(id),
-            _frames: frames
+            pathNodeIds: [...pathNodeIds],
+            pathNodes: pathNodeIds.map(nid => this.nodeById(nid)).filter(Boolean),
+            nextIdx: 1,
+            loop,
+            yoyo,
+            forward: true,
+            currentNodeId: pathNodeIds[0],
+            orientationMode,
+            animKey: walkKey,
+            behavior,
+            fleeReplanMs,
+            _replanAt: 0,
+            _lastX: sprite.x,
+            _lastY: sprite.y,
+
+            // ⬇️ NUEVO
+            clickable,
+            pickupItemName
         };
 
+        // ⬇️ NUEVO: click para “capturar” en rango
         if (clickable) {
             sprite.setInteractive({
                 useHandCursor: true
             });
-            sprite.on('pointerdown', () => this.onNpcClicked(npc));
+            sprite.on('pointerdown', () => {
+                const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, npc.sprite.x, npc.sprite.y);
+                if (d > (this.encounterRadius)) {
+                    this.addTempText('Acércate un poco…', npc.sprite.x + 10, npc.sprite.y - 20);
+                    return;
+                }
+
+                // Añade al inventario lo que toque (por defecto usa el id)
+                const itemName = npc.pickupItemName || npc.id || 'objeto';
+                this.gs.addItem?.(itemName);
+                // opcional: flag de progreso
+                if (npc.id === 'pavo') {
+                    this.gs.setFlag?.('pavoCapturado', true);
+                }
+
+                // feedback opcional
+                this.addTempText(`Añadido: ${itemName}`, npc.sprite.x + 10, npc.sprite.y - 35);
+
+                // Despawnea
+                this.despawnScriptedNPC(npc);
+                // refresca inventario en UI si tienes método
+                this.updateInventoryDisplay?.();
+            });
         } else {
             sprite.disableInteractive();
         }
@@ -319,37 +449,106 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         this.scriptedNpcs.push(npc);
         return npc;
     }
+
+    ensurePatrolPath(npc) {
+        if (!npc)
+            return false;
+        // Recalcula por si cambió el grafo:
+        const newPath = this.findPath(npc.fromNodeId, npc.toNodeId);
+        if (Array.isArray(newPath) && newPath.length >= 2) {
+            npc.pathNodes = newPath;
+            // Corrige nextIdx al rango
+            npc.nextIdx = Phaser.Math.Clamp(npc.nextIdx, 1, npc.pathNodes.length - 1);
+            return true;
+        }
+        return false;
+    }
+
     updateScriptedNPCs(dt) {
+        if (!this.scriptedNpcs)
+            return;
+
         for (const npc of this.scriptedNpcs) {
-            if (npc.kind === 'patrol') {
-                const from = this.nodeById(npc.fromNodeId);
-                const to = this.nodeById(npc.toNodeId);
-                if (!from || !to)
-                    continue;
+            if (!npc.sprite || npc.kind === 'static')
+                continue;
 
-                const target = npc.dir === 1 ? to : from;
-                const dx = target.x - npc.sprite.x;
-                const dy = target.y - npc.sprite.y;
-                const dist = Math.hypot(dx, dy);
-
-                if (dist < 2) {
-                    npc.dir *= -1; // cambiar dirección
-                    npc.sprite.anims.stop(); // se queda quieto
-                    npc.sprite.setFrame(0);
-                } else {
-                    const v = npc.speed * (dt / 1000);
-                    npc.sprite.x += (dx / dist) * v;
-                    npc.sprite.y += (dy / dist) * v;
-
-                    npc.sprite.rotation = Math.atan2(dy, dx);
-
-                    if (!npc.sprite.anims.isPlaying) {
-                        npc.sprite.play(npc.sprite.texture.key + '_walk');
-                    }
+            // Replan huida si toca
+            if (npc.behavior === 'flee') {
+                if (!npc._replanAt || this.time.now >= npc._replanAt || !npc.pathNodes || npc.nextIdx >= npc.pathNodes.length) {
+                    this.planFleePath(npc, 3); // 3 saltos por plan
                 }
             }
+
+            // Si no tiene camino válido, saltar
+            if (!npc.pathNodes || npc.pathNodes.length < 2 || npc.nextIdx >= npc.pathNodes.length) {
+                // Patrulla: reconstruye camino si hace falta (por si yoyo/loop)
+                if (npc.behavior === 'patrol') {
+                    // Manejo de bucles/yoyo
+                    if (npc.yoyo) {
+                        npc.forward = !npc.forward;
+                        const ids = npc.forward ? npc.pathNodeIds : [...npc.pathNodeIds].reverse();
+                        npc.pathNodes = ids.map(id => this.nodeById(id)).filter(Boolean);
+                        npc.nextIdx = 1;
+                    } else if (npc.loop) {
+                        npc.nextIdx = 1;
+                    }
+                }
+                continue;
+            }
+
+            const target = npc.pathNodes[npc.nextIdx];
+            if (!target)
+                continue;
+
+            const dx = target.x - npc.sprite.x;
+            const dy = target.y - npc.sprite.y;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist <= 2) {
+                // Llegó al nodo
+                npc.sprite.x = target.x;
+                npc.sprite.y = target.y;
+                npc.currentNodeId = target.id;
+                npc.nextIdx++;
+
+                // Cuando termine el tramo:
+                if (npc.behavior === 'patrol') {
+                    if (npc.nextIdx >= npc.pathNodes.length) {
+                        // gestionar loop/yoyo
+                        if (npc.yoyo) {
+                            npc.forward = !npc.forward;
+                            const ids = npc.forward ? npc.pathNodeIds : [...npc.pathNodeIds].reverse();
+                            npc.pathNodes = ids.map(id => this.nodeById(id)).filter(Boolean);
+                            npc.nextIdx = 1;
+                        } else if (npc.loop) {
+                            npc.nextIdx = 1;
+                        }
+                    }
+                } else if (npc.behavior === 'flee') {
+                    // en huida, replanificamos en el siguiente tick por si acaso
+                    npc._replanAt = 0;
+                }
+
+                continue;
+            }
+
+            // Avance hacia el siguiente nodo del camino (siempre por los edges)
+            const v = npc.speed * (dt / 1000);
+            const vx = (dx / dist) * v;
+            const vy = (dy / dist) * v;
+            npc.sprite.x += vx;
+            npc.sprite.y += vy;
+
+            // Reproducir anim walk si no está sonando
+            if (npc.animKey && npc.sprite.anims && !npc.sprite.anims.isPlaying) {
+                npc.sprite.play(npc.animKey);
+            }
+
+            // Orientación según modo
+            this.applySpriteOrientation(npc.sprite, vx, vy, npc.orientationMode);
         }
     }
+
     createNPCAnimation(texture, frames, fps = 8) {
         if (!this.anims.exists(texture + '_walk')) {
             this.anims.create({
@@ -542,7 +741,7 @@ export default class OfficeMapClickScene extends Phaser.Scene {
     update(_t, dt) {
         this.updatePlayer(dt);
         this.updateNPCs(dt);
-		this.updateScriptedNPCs(dt);
+        this.updateScriptedNPCs(dt);
         this.checkEncounters();
         // Al final de tu update(), después de updateNPCs etc.
         for (const npc of this.scriptedNpcs) {
@@ -821,6 +1020,16 @@ export default class OfficeMapClickScene extends Phaser.Scene {
         this.npcs.push(npc);
         return npc;
     }
+    despawnScriptedNPC(npc) {
+        if (!npc)
+            return;
+        // borra sprite
+        npc.sprite?.destroy();
+        // sácalo del array
+        const i = this.scriptedNpcs?.indexOf(npc);
+        if (i != null && i >= 0)
+            this.scriptedNpcs.splice(i, 1);
+    }
     onNpcClicked(npc) {
         if (!npc || !npc.sprite)
             return;
@@ -839,7 +1048,9 @@ export default class OfficeMapClickScene extends Phaser.Scene {
             x: this.player.x,
             y: this.player.y
         };
-
+        if (npc.id === 'pavo') {
+            this.gs.addItem('Pavo');
+        }
         this.despawnNPC(npc);
 
         this.scene.start('DuelScene', {
