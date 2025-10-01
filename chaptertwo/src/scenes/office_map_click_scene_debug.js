@@ -652,6 +652,7 @@ export default class OfficeMapClickScene extends Phaser.Scene {
                     // Salimos desde A hacia B
                     if (npc.currentNodeId === S.A && S.goingTo === 'B') {
                         this.showSpotMessage(S.A, "Con tanto mate me estoy recontrameando, me voy al servicio...", 3000);
+						this.gs.setFlag('caroEnSitio',false);
                     }
                     S.pauseUntil = 0; // limpiar pausa para poder planificar
                 }

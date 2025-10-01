@@ -1,19 +1,13 @@
-import {
-    addHelpButton
-}
-from "../ui/HelpButton.js";
-import {
-    gameState
-}
-from "../core/state.js";
+import { addHelpButton } from "../ui/HelpButton.js";
+import { gameState } from "../core/state.js";
 export default class caro extends Phaser.Scene {
     constructor() {
         super('caro');
     }
 
     preload() {
-        this.load.image('sitiocaro', 'assets/alfredoofi.png');
-
+        this.load.image('sitiocaro', 'assets/ofi1.jpeg');
+        this.load.image('sitiocaro_sin_teclado', 'assets/ofi1_nokeyboard.png'); // ← NUEVO
         this.load.image('npcaro', 'assets/caro.png');
         this.load.image('npcarofull', 'assets/carofull.png');
     }
@@ -25,8 +19,7 @@ export default class caro extends Phaser.Scene {
         if (!this.sceneInteractives) {
             this.sceneInteractives = [this.player, this.item, this.pressureZone];
         }
- this.gs = this.registry.get('gameState') || gameState;
-      
+        this.gs = this.registry.get('gameState') || gameState;
 
         this.sceneInteractives = this.sceneInteractives || [];
         if (!this.sceneInteractives.includes(this.alfredo)) {
@@ -39,7 +32,7 @@ export default class caro extends Phaser.Scene {
 
         this.input.enabled = true;
         console.log(this.scene.manager.keys);
-       
+
         this.accessCardAttempts = 0;
         this.gs.setFlag('entered', true);
         this.dialogueUsedOptions = {};
@@ -103,7 +96,7 @@ export default class caro extends Phaser.Scene {
         }).setDepth(2).setScrollFactor(0);
 
         this.dialogueBox.setText('');
-		  if (this.gs.getFlag('caroEnSitio')) {
+        if (this.gs.getFlag('caroEnSitio')) {
             this.alfredo = this.add.sprite(430, 280, 'npcarofull')
                 .setOrigin(0, 0) // esquina inferior derecha
                 .setScale(0.4)
@@ -114,39 +107,121 @@ export default class caro extends Phaser.Scene {
             this.alfredo.on('pointerdown', () => {
                 this.startDialogueWithAlfredo();
             });
+            const hasMate =
+                (Array.isArray(this.gs.inventory) && this.gs.inventory.includes('Mate Preparado')) ||
+            this.gs.getFlag('caroHasMate') === true;
+
+            // Mensajes
+            const MSG_NO_MATE = "¡che, se me acabó el mate y esto es un quilombo! ¡Sentá el orto y laburá!";
+            const MSG_THANKS = "¡Gracias por el mate, che! Pero ahora no tengo tiempo para darte bola.";
+
+            // Rama según tengas mate
+            if (!hasMate) {
+                this.sayAndReturn(MSG_NO_MATE, 3600, "n43"); // vuelve al mapa
+            } else {
+                // Ofrece entregarlo
+                this.showWithOptions(
+                    "¿Trajiste mate? Si es así, pasalo rápido que estoy hasta las manos…",
+                    [{
+                            label: '[Entregar mate]',
+                            action: () => this.giveMate(MSG_THANKS, "n43")
+                        }, {
+                            label: '[Volver]',
+                            action: () => this.backToMap("n43")
+                        }
+                    ]);
+            }
+
         } else if (this.gs.getFlag('caroEnWC')) {
             this.dialogueBox.setText("Caro no está aquí, parece que ha ido al WC.");
         } else {
+			this.createTecladoZoneIfAvailable();
             this.dialogueBox.setText("No ves a Caro en este momento.");
         }
-        const hasMate =
-            (Array.isArray(this.gs.inventory) && this.gs.inventory.includes('Mate Preparado')) ||
-        this.gs.getFlag('caroHasMate') === true;
 
-        // Mensajes
-        const MSG_NO_MATE = "¡che, se me acabó el mate y esto es un quilombo! ¡Sentá el orto y laburá!";
-        const MSG_THANKS = "¡Gracias por el mate, che! Pero ahora no tengo tiempo para darte bola.";
-
-        // Rama según tengas mate
-        if (!hasMate) {
-            this.sayAndReturn(MSG_NO_MATE, 3600, "n43"); // vuelve al mapa
-        } else {
-            // Ofrece entregarlo
-            this.showWithOptions(
-                "¿Trajiste mate? Si es así, pasalo rápido que estoy hasta las manos…",
-                [{
-                        label: '[Entregar mate]',
-                        action: () => this.giveMate(MSG_THANKS, "n43")
-                    }, {
-                        label: '[Volver]',
-                        action: () => this.backToMap("n43")
-                    }
-                ]);
-        }
         this.inventoryGroup = this.add.group();
         this.updateInventoryDisplay();
 
     }
+    createTecladoZoneIfAvailable() {
+        // Solo aparece si Caro NO está en su sitio y el teclado NO se ha cogido todavía
+        const caroEnSitio = !!this.gs.getFlag('caroEnSitio');
+        const tecladoCogido = !!this.gs.getFlag('tecladoCogido');
+
+        // Si no toca mostrar, elimina cualquier zona previa y sal
+        if (caroEnSitio || tecladoCogido) {
+            if (this._tecladoZone) {
+                this._tecladoZone.removeListener('pointerdown');
+                this._tecladoZone.destroy();
+                this._tecladoZone = null;
+            }
+            if (this._tecladoZoneDbg) {
+                this._tecladoZoneDbg.destroy();
+                this._tecladoZoneDbg = null;
+            }
+            return;
+        }
+
+        // Si ya existe (y las condiciones siguen), no re-crear
+        if (this._tecladoZone)
+            return;
+
+        // Coordenadas aproximadas de la mesa de Caro en tu fondo (ajústalas a tu imagen)
+        const x = 320,
+        y = 320,
+        w = 140,
+        h = 90;
+
+        // Zona clicable
+        const z = this.add.zone(x, y, w, h)
+            .setOrigin(0.5)
+            .setInteractive({
+                useHandCursor: true
+            })
+            .setDepth(10);
+
+        // (Opcional) contorno muy sutil para depurar la zona
+        const dbg = this.add.graphics().setDepth(9);
+        dbg.lineStyle(2, 0x00ff88, 0.10);
+        dbg.strokeRect(x - w / 2, y - h / 2, w, h);
+
+        z.on('pointerdown', () => {
+            // Reevaluar por si cambió el estado justo antes del click
+            if (this.gs.getFlag('caroEnSitio') || this.gs.getFlag('tecladoCogido'))
+                return;
+
+            // Añadir inventario y marcar flag
+            this.gs.addItem?.('teclado');
+            this.gs.setFlag('tecladoCogido', true);
+
+            // Feedback visual
+            const msg = this.add.text(x, y - 60, 'Teclado se ha añadido a tu inventario', {
+                font: '18px monospace',
+                fill: '#ffff00',
+                backgroundColor: '#000000',
+                padding: {
+                    x: 8,
+                    y: 4
+                }
+            }).setOrigin(0.5).setDepth(1000);
+
+            this.time.delayedCall(1200, () => msg.destroy());
+
+            // Cambiar el fondo a la versión sin teclado
+            this.setBackground('sitiocaro_sin_teclado');
+
+            // Limpiar zona e interfaz de inventario
+            this._tecladoZone?.destroy();
+            this._tecladoZone = null;
+            this._tecladoZoneDbg?.destroy();
+            this._tecladoZoneDbg = null;
+            this.updateInventoryDisplay?.();
+        });
+
+        this._tecladoZone = z;
+        this._tecladoZoneDbg = dbg;
+    }
+
     typeText(targetTextObj, fullText, cps = 20, onComplete) {
         // cps = caracteres por segundo (22 recomendado)
         const delay = Math.max(5, Math.floor(1000 / cps));
